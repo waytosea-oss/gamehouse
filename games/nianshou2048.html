@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>年兽 2048 · 游戏大厅</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#2a0f0d;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff3e0}
+body{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#app{max-width:480px;margin:0 auto;min-height:100vh;background:linear-gradient(180deg,#3d130e,#5c1a10 55%,#3d130e);display:flex;flex-direction:column;position:relative;overflow:hidden}
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.25)}
+#topbar a{color:#ffd98a;text-decoration:none;font-size:15px;font-weight:600}
+#topbar .tname{flex:1;text-align:center;font-size:17px;font-weight:700;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;font-size:17px;padding:4px 10px;cursor:pointer}
+#hud{display:flex;gap:8px;padding:10px 14px 4px;align-items:stretch}
+.hbox{flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(255,217,138,.35);border-radius:12px;padding:6px 4px;text-align:center}
+.hbox .lab{font-size:11px;color:#ffcf9e;letter-spacing:1px}
+.hbox .val{font-size:19px;font-weight:800;color:#ffe9b0}
+#bombBtn{flex:1;border-radius:12px;border:1px solid rgba(255,217,138,.5);background:linear-gradient(180deg,#8c2b12,#6d1f0c);color:#ffe9b0;font-size:16px;font-weight:700;cursor:pointer;padding:6px 2px}
+#bombBtn.armed{background:linear-gradient(180deg,#ffb300,#f57c00);color:#4a1503;animation:pulse .6s infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
+#hint{min-height:22px;text-align:center;font-size:13px;color:#ffd98a;padding:4px 12px}
+#boardWrap{padding:6px 14px 14px}
+#board{position:relative;width:100%;aspect-ratio:1/1;background:rgba(0,0,0,.38);border:2px solid rgba(255,217,138,.4);border-radius:16px;touch-action:none;overflow:hidden}
+#board.arming{border-color:#ffb300;box-shadow:0 0 0 3px rgba(255,179,0,.45),0 0 22px rgba(255,140,0,.5)}
+.cell{position:absolute;width:25%;height:25%;padding:5px}
+.cell i{display:block;width:100%;height:100%;background:rgba(255,235,200,.09);border-radius:12px}
+#layer{position:absolute;inset:0}
+.tile{position:absolute;left:0;top:0;width:25%;height:25%;padding:5px;transition:transform .13s ease-in-out;will-change:transform;z-index:2}
+.tin{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.35)}
+.tin .em{font-size:30px;line-height:1}
+.tin .nm{font-size:11px;font-weight:700;margin-top:2px;color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.v2{background:linear-gradient(145deg,#ef9a9a,#e57373)}.v4{background:linear-gradient(145deg,#e57373,#ef5350)}
+.v8{background:linear-gradient(145deg,#ef5350,#d32f2f)}.v16{background:linear-gradient(145deg,#d32f2f,#b71c1c)}
+.v32{background:linear-gradient(145deg,#c21807,#8e1403)}.v64{background:linear-gradient(145deg,#ad1457,#880e4f)}
+.v128{background:linear-gradient(145deg,#8e24aa,#6a1b9a)}.v256{background:linear-gradient(145deg,#5e35b1,#4527a0)}
+.v512{background:linear-gradient(145deg,#3949ab,#283593)}.v1024{background:linear-gradient(145deg,#00897b,#00695c)}
+.v2048{background:linear-gradient(145deg,#ffd54f,#ffb300);box-shadow:0 0 18px rgba(255,193,7,.85),inset 0 -4px 0 rgba(0,0,0,.15)}
+.v2048 .nm{color:#5d3700;text-shadow:none}
+.tile.spawn .tin{animation:spawn .18s ease}
+@keyframes spawn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.tile.pop .tin{animation:pop .2s ease}
+@keyframes pop{0%{transform:scale(.6)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+.tile.boom .tin{animation:boom .3s forwards}
+@keyframes boom{to{transform:scale(1.7) rotate(14deg);opacity:0}}
+.fx{position:absolute;width:25%;height:25%;display:flex;align-items:center;justify-content:center;font-size:52px;pointer-events:none;z-index:5;animation:fxup .45s forwards}
+@keyframes fxup{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5) translateY(-16px);opacity:0}}
+#toast{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.8);background:rgba(20,5,0,.88);border:1px solid #ffb300;color:#ffe9b0;font-size:17px;font-weight:700;padding:10px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:8;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#ladder{padding:2px 14px 16px;font-size:11.5px;color:#ffcf9e;text-align:center;line-height:1.9}
+.overlay{position:absolute;inset:0;background:rgba(24,4,2,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;z-index:10;text-align:center}
+.overlay.hidden{display:none}
+.overlay h1{font-size:34px;letter-spacing:3px;color:#ffd54f;text-shadow:0 3px 0 #8c2b12;margin-bottom:12px}
+.overlay p{font-size:14.5px;line-height:1.85;color:#ffe0c2;max-width:330px}
+.overlay .big{margin-top:22px;background:linear-gradient(180deg,#ffb300,#f57c00);color:#4a1503;font-size:19px;font-weight:800;border:none;border-radius:999px;padding:13px 46px;cursor:pointer;box-shadow:0 6px 0 #a34d00,0 10px 18px rgba(0,0,0,.4)}
+.overlay .big:active{transform:translateY(3px);box-shadow:0 3px 0 #a34d00}
+.overlay .ghost{margin-top:12px;background:transparent;color:#ffd98a;font-size:15px;border:1px solid rgba(255,217,138,.55);border-radius:999px;padding:10px 30px;cursor:pointer}
+.overlay .best{margin-top:16px;font-size:14px;color:#ffcf9e}
+.overlay .final{font-size:21px;color:#fff;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <a href="../index.html">← 大厅</a>
+    <div class="tname">🧧 年兽 2048</div>
+    <button id="muteBtn" aria-label="静音">🔊</button>
+  </div>
+  <div id="hud">
+    <div class="hbox"><div class="lab">分数</div><div class="val" id="score">0</div></div>
+    <div class="hbox"><div class="lab">步数</div><div class="val" id="steps">0</div></div>
+    <div class="hbox"><div class="lab">最高</div><div class="val" id="bestHud">0</div></div>
+    <button id="bombBtn">🧨 鞭炮 ×0</button>
+  </div>
+  <div id="hint">滑动或方向键移动年兽，两只相同的碰在一起进化！</div>
+  <div id="boardWrap"><div id="board"><div id="cells"></div><div id="layer"></div></div></div>
+  <div id="ladder">进化链：兽卵 → 兽崽 → 小年兽 → 年兽 → 大年兽 → 凶年兽 → 瑞兽 → 貔貅 → 獬豸 → 麒麟子 → <b style="color:#ffd54f">麒麟</b><br>每走 20 步得一挂鞭炮，点鞭炮再点格子，可以炸掉一只年兽腾地方。</div>
+  <div id="toast"></div>
+
+  <div id="startOverlay" class="overlay">
+    <h1>🧧 年兽 2048</h1>
+    <p>滑动棋盘，让两只相同的年兽撞在一起进化。<br>一路从兽卵进化到麒麟，就能过个好年！<br>每走 20 步得一挂鞭炮，能炸掉任意一只年兽。</p>
+    <button class="big" id="startBtn">开始游戏</button>
+    <div class="best">🏆 最高分：<span id="startBest">0</span></div>
+  </div>
+
+  <div id="endOverlay" class="overlay hidden">
+    <h1 id="endTitle">年兽满营啦</h1>
+    <p id="endText"></p>
+    <div class="final">本局得分：<span id="endScore">0</span></div>
+    <div class="best">🏆 最高分：<span id="endBest">0</span></div>
+    <button class="big" id="againBtn">再来一局</button>
+    <button class="ghost" id="continueBtn" style="display:none">继续挑战 →</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 极简 WebAudio 合成音效 ---------- */
+const Snd=(()=>{let ctx=null,muted=false;
+  function ac(){if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(ctx&&ctx.state==='suspended')ctx.resume();return ctx}
+  function tone(f,d,type,g,delay,slide){if(muted)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),gn=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);gn.gain.setValueAtTime(g||.15,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn);gn.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+  function noise(d,g,delay){if(muted)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const len=Math.floor(a.sampleRate*d);const buf=a.createBuffer(1,len,a.sampleRate);const ch=buf.getChannelData(0);for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*(1-i/len);const src=a.createBufferSource();src.buffer=buf;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=900;const gn=a.createGain();gn.gain.value=g||.3;src.connect(f);f.connect(gn);gn.connect(a.destination);src.start(t)}
+  return{
+    click(){tone(660,.06,'triangle',.12)},
+    spawn(){tone(520,.05,'sine',.07)},
+    merge(tier){tone(300+tier*60,.12,'triangle',.18);tone(450+tier*60,.14,'sine',.12,.03)},
+    bomb(){noise(.35,.4);tone(120,.3,'sawtooth',.2,0,40)},
+    win(){[523,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.18,i*.11))},
+    lose(){[400,340,280,200].forEach((f,i)=>tone(f,.2,'sine',.15,i*.12))},
+    get muted(){return muted},set muted(v){muted=v}
+  };})();
+
+/* ---------- 游戏状态 ---------- */
+const TIER={2:{e:'🥚',n:'兽卵'},4:{e:'🐣',n:'兽崽'},8:{e:'🐱',n:'小年兽'},16:{e:'🐯',n:'年兽'},32:{e:'🦁',n:'大年兽'},64:{e:'🐲',n:'凶年兽'},128:{e:'🦄',n:'瑞兽'},256:{e:'🐴',n:'貔貅'},512:{e:'🦌',n:'獬豸'},1024:{e:'🐉',n:'麒麟子'},2048:{e:'👑',n:'麒麟'}};
+const $=id=>document.getElementById(id);
+const boardEl=$('board'),layer=$('layer');
+let board,tid,score,steps,bombs,arming,lock,over,wonOnce,playing;
+let best=+(localStorage.getItem('gh_nianshou2048_best')||0);
+
+for(let i=0;i<16;i++){const c=document.createElement('div');c.className='cell';c.style.left=(i%4*25)+'%';c.style.top=((i/4|0)*25)+'%';c.innerHTML='<i></i>';$('cells').appendChild(c)}
+$('startBest').textContent=best;$('bestHud').textContent=best;
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1300)}
+function saveBest(){if(score>best){best=score;localStorage.setItem('gh_nianshou2048_best',best)}$('bestHud').textContent=best}
+function updHud(){$('score').textContent=score;$('steps').textContent=steps;$('bombBtn').textContent='🧨 鞭炮 ×'+bombs}
+
+function mkEl(t){
+  const el=document.createElement('div');el.className='tile';el.dataset.id=t.id;
+  el.innerHTML='<div class="tin v'+t.v+'"><div class="em">'+TIER[t.v].e+'</div><div class="nm">'+TIER[t.v].n+'</div></div>';
+  el.style.transform='translate('+(t.c*100)+'%,'+(t.r*100)+'%)';
+  layer.appendChild(el);t.el=el;return el;
+}
+function spawnTile(nb){
+  const empty=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!nb[r][c])empty.push([r,c]);
+  if(!empty.length)return null;
+  const[r,c]=empty[Math.random()*empty.length|0];
+  const t={id:++tid,v:Math.random()<.9?2:4,r,c,el:null};
+  nb[r][c]=t;return t;
+}
+function startGame(){
+  board=Array.from({length:4},()=>Array(4).fill(null));tid=0;score=0;steps=0;bombs=0;arming=false;lock=false;over=false;wonOnce=false;playing=true;
+  layer.innerHTML='';
+  const a=spawnTile(board),b=spawnTile(board);
+  if(a)mkEl(a).classList.add('spawn');if(b)mkEl(b).classList.add('spawn');
+  updHud();setArm(false);
+  $('startOverlay').classList.add('hidden');$('endOverlay').classList.add('hidden');
+}
+function lines(dr,dc){
+  const L=[];
+  if(dr!==0){for(let c=0;c<4;c++){const col=[];for(let k=0;k<4;k++)col.push([dr>0?3-k:k,c]);L.push(col)}}
+  else{for(let r=0;r<4;r++){const row=[];for(let k=0;k<4;k++)row.push([r,dc>0?3-k:k]);L.push(row)}}
+  return L;
+}
+function move(dr,dc){
+  if(!playing||lock||over)return;
+  let changed=false,gained=0;const nb=Array.from({length:4},()=>Array(4).fill(null));
+  const slides=[],merges=[];
+  for(const line of lines(dr,dc)){
+    const items=line.map(([r,c])=>board[r][c]).filter(Boolean);
+    let s=0;
+    for(let i=0;i<items.length;){
+      const[tr,tc]=line[s];
+      if(i+1<items.length&&items[i+1].v===items[i].v){
+        const a=items[i],b=items[i+1],nt={id:++tid,v:a.v*2,r:tr,c:tc,el:null};
+        nb[tr][tc]=nt;gained+=nt.v;changed=true;
+        slides.push([a,tr,tc],[b,tr,tc]);merges.push([nt,a,b]);
+        i+=2;
+      }else{
+        const a=items[i];nb[tr][tc]=a;
+        if(a.r!==tr||a.c!==tc){slides.push([a,tr,tc]);changed=true}
+        a.r=tr;a.c=tc;i+=1;
+      }
+      s++;
+    }
+  }
+  if(!changed){return}
+  lock=true;score+=gained;steps++;
+  for(const[t,tr,tc]of slides){t.r=tr;t.c=tc;t.el.style.transform='translate('+(tc*100)+'%,'+(tr*100)+'%)'}
+  board=nb;
+  if(steps%20===0){bombs++;toast('🎉 走了 '+steps+' 步，获得一挂鞭炮！');Snd.merge(3)}
+  updHud();saveBest();
+  setTimeout(()=>{
+    let winNow=false;
+    for(const[nt,a,b]of merges){
+      a.el.remove();b.el.remove();mkEl(nt).classList.add('pop');
+      Snd.merge(Math.round(Math.log2(nt.v)));
+      if(nt.v===2048&&!wonOnce)winNow=true;
+    }
+    const st=spawnTile(board);
+    if(st){mkEl(st).classList.add('spawn');Snd.spawn()}
+    lock=false;
+    if(winNow){wonOnce=true;showEnd(true)}
+    else if(isDead()){over=true;Snd.lose();showEnd(false)}
+  },145);
+}
+function isDead(){
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    if(!board[r][c])return false;
+    if(c<3&&board[r][c+1]&&board[r][c+1].v===board[r][c].v)return false;
+    if(r<3&&board[r+1][c]&&board[r+1][c].v===board[r][c].v)return false;
+  }
+  return true;
+}
+function showEnd(win){
+  $('endTitle').textContent=win?'👑 麒麟降临！':'🧧 年兽满营啦';
+  $('endText').textContent=win?'你成功把年兽进化成了麒麟，这个年稳了！可以继续挑战更高分。':'棋盘塞满了，再也进化不动啦。';
+  $('endScore').textContent=score;$('endBest').textContent=best;
+  $('continueBtn').style.display=win?'':'none';
+  $('endOverlay').classList.remove('hidden');
+  if(win)Snd.win();
+}
+function setArm(on){
+  arming=on&&bombs>0;
+  $('bombBtn').classList.toggle('armed',arming);
+  boardEl.classList.toggle('arming',arming);
+  $('hint').textContent=arming?'点一只年兽，把它炸掉！再点鞭炮取消。':'滑动或方向键移动年兽，两只相同的碰在一起进化！';
+}
+$('bombBtn').addEventListener('click',()=>{if(!playing||lock)return;if(bombs<=0){toast('还没有鞭炮，每走 20 步得一挂');return}Snd.click();setArm(!arming)});
+function bombAt(r,c){
+  const t=board&&board[r]&&board[r][c];
+  if(!t)return;
+  board[r][c]=null;bombs--;setArm(false);
+  const fx=document.createElement('div');fx.className='fx';fx.textContent='💥';
+  fx.style.left=(c*25)+'%';fx.style.top=(r*25)+'%';boardEl.appendChild(fx);
+  t.el.classList.add('boom');Snd.bomb();
+  setTimeout(()=>{t.el.remove();fx.remove()},320);
+  updHud();toast('💥 炸掉了一只'+TIER[t.v].n+'！');
+}
+/* 输入：滑动 + 点击（点格用鞭炮） */
+let pDown=null;
+boardEl.addEventListener('pointerdown',e=>{pDown=[e.clientX,e.clientY]});
+boardEl.addEventListener('pointerup',e=>{
+  if(!pDown)return;const dx=e.clientX-pDown[0],dy=e.clientY-pDown[1];pDown=null;
+  const adx=Math.abs(dx),ady=Math.abs(dy);
+  if(Math.max(adx,ady)<24){
+    if(arming){const rect=boardEl.getBoundingClientRect();const c=Math.min(3,Math.max(0,((e.clientX-rect.left)/rect.width*4)|0));const r=Math.min(3,Math.max(0,((e.clientY-rect.top)/rect.height*4)|0));bombAt(r,c)}
+    return;
+  }
+  if(adx>ady)move(0,dx>0?1:-1);else move(dy>0?1:-1,0);
+});
+document.addEventListener('keydown',e=>{
+  if(!playing)return;
+  const k=e.key;
+  if(k==='ArrowLeft'){move(0,-1);e.preventDefault()}
+  else if(k==='ArrowRight'){move(0,1);e.preventDefault()}
+  else if(k==='ArrowUp'){move(-1,0);e.preventDefault()}
+  else if(k==='ArrowDown'){move(1,0);e.preventDefault()}
+});
+$('muteBtn').addEventListener('click',()=>{Snd.muted=!Snd.muted;$('muteBtn').textContent=Snd.muted?'🔇':'🔊';if(!Snd.muted)Snd.click()});
+$('startBtn').addEventListener('click',()=>{Snd.click();startGame()});
+$('againBtn').addEventListener('click',()=>{Snd.click();startGame()});
+$('continueBtn').addEventListener('click',()=>{Snd.click();$('endOverlay').classList.add('hidden')});
+</script>
+</body>
+</html>

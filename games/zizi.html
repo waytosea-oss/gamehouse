@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>字字归位 · 游戏大厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:linear-gradient(165deg,#20304d,#33477a 55%,#5b3a6e); color:#f2ecff; min-height:100vh; }
+  #app { max-width:480px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:6px 2px 10px; }
+  header a { color:#ffd98a; text-decoration:none; font-size:15px; background:rgba(255,255,255,.1); padding:6px 12px; border-radius:999px; }
+  header h1 { font-size:20px; letter-spacing:2px; }
+  #muteBtn { background:rgba(255,255,255,.12); border:none; color:#fff; font-size:17px; width:38px; height:38px; border-radius:50%; cursor:pointer; }
+  #hud { display:flex; gap:8px; margin-bottom:10px; }
+  .chip { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,217,138,.28); border-radius:10px; padding:6px 4px; text-align:center; font-size:13px; }
+  .chip b { display:block; font-size:17px; color:#ffd98a; }
+  #targets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  #targets .tg { font-size:13.5px; letter-spacing:2px; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.22); padding:5px 10px; border-radius:999px; }
+  #targets .tg.done { background:linear-gradient(180deg,#ffdf7e,#e8a91c); color:#4d3000; border-color:#ffdf7e; font-weight:700; }
+  #tubes { display:flex; flex-wrap:wrap; gap:12px 10px; justify-content:center; padding:8px 2px 2px; }
+  .tube { width:52px; height:196px; border:3px solid rgba(210,225,255,.55); border-top:none; border-radius:6px 6px 22px 22px; background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(160,190,255,.13)); display:flex; flex-direction:column-reverse; align-items:center; padding:5px 4px 7px; cursor:pointer; position:relative; transition:box-shadow .15s, border-color .15s; }
+  .tube.sel { border-color:#ffd166; box-shadow:0 0 0 3px rgba(255,209,102,.35), 0 8px 18px rgba(0,0,0,.35); }
+  .tube.locked { border-color:#e8a91c; background:linear-gradient(180deg,rgba(255,215,100,.14),rgba(255,170,0,.2)); cursor:default; }
+  .tile { width:40px; height:40px; margin-top:4px; border-radius:9px; background:linear-gradient(160deg,#fdf6e3,#e8d9b0); color:#33305e; font-size:21px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 6px rgba(0,0,0,.3), inset 0 1px 2px #fff; transition:transform .15s; flex:0 0 auto; }
+  .tube.locked .tile { background:linear-gradient(160deg,#ffe98a,#f5b921); color:#5b3400; }
+  .tube.sel .tile.top { transform:translateY(-9px); box-shadow:0 10px 14px rgba(0,0,0,.4); }
+  .tube .lockBadge { position:absolute; top:-13px; right:-9px; font-size:15px; }
+  .tube.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  #msg { text-align:center; min-height:24px; font-size:14.5px; color:#ffe9b8; margin-top:14px; }
+  #btnRow { display:flex; gap:10px; justify-content:center; margin-top:8px; }
+  .mini { background:rgba(255,255,255,.13); color:#f2ecff; border:1px solid rgba(255,217,138,.4); padding:8px 18px; border-radius:999px; font-size:14px; cursor:pointer; }
+  .mini:disabled { opacity:.4; }
+  .ov { position:fixed; inset:0; background:rgba(10,10,30,.78); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; }
+  .ov.hide { display:none; }
+  .card { background:linear-gradient(165deg,#2b3d6b,#4a3566); border:1px solid rgba(255,217,138,.5); border-radius:18px; padding:26px 22px; max-width:350px; width:100%; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .card h2 { font-size:25px; letter-spacing:2px; margin-bottom:10px; }
+  .card p { font-size:14px; line-height:1.75; color:#e6ddfa; margin-bottom:14px; }
+  .card .best { font-size:13px; color:#ffd98a; margin-bottom:16px; }
+  .bigbtn { background:linear-gradient(180deg,#ffd166,#f49f0a); color:#402a00; border:none; font-size:18px; font-weight:700; padding:13px 38px; border-radius:999px; cursor:pointer; box-shadow:0 6px 16px rgba(244,159,10,.45); letter-spacing:2px; }
+  .bigbtn:active { transform:scale(.96); }
+  .scoreLine { font-size:16px; margin:6px 0; }
+  .scoreLine b { color:#ffd166; font-size:22px; }
+  #toast { position:fixed; left:50%; top:38%; transform:translate(-50%,-50%) scale(.7); font-size:34px; font-weight:900; letter-spacing:6px; color:#ffd166; text-shadow:0 4px 18px rgba(0,0,0,.6); opacity:0; pointer-events:none; z-index:70; transition:all .3s ease; }
+  #toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a href="../index.html">← 大厅</a>
+    <h1>🀄 字字归位</h1>
+    <button id="muteBtn" title="静音">🔊</button>
+  </header>
+
+  <div id="hud">
+    <div class="chip">关卡<b id="hLevel">1 / 6</b></div>
+    <div class="chip">分数<b id="hScore">0</b></div>
+    <div class="chip">步数<b id="hMoves">0</b></div>
+    <div class="chip">成语<b id="hDone">0 / 2</b></div>
+  </div>
+
+  <div id="targets"></div>
+  <div id="tubes"></div>
+
+  <div id="msg">点一支管选它顶上的字，再点另一支管放下。</div>
+  <div id="btnRow">
+    <button class="mini" id="undoBtn">↩ 撤销</button>
+    <button class="mini" id="restartBtn">↺ 重开本关</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="ov" id="startOv">
+  <div class="card">
+    <h2>🀄 字字归位</h2>
+    <p>试管里叠着打乱的汉字。点一支管取出顶上的字，再点另一支管放下去。<br>当一支管装满 4 个字、<b>从管底往上正好读成一个成语</b>，这支管就金光锁定、成语达成！<br>上方 chips 是本关要拼的成语，另有 2 支空管帮你腾挪。</p>
+    <div class="best" id="startBest">最高分：0</div>
+    <button class="bigbtn" id="startBtn">开 始 拼 字</button>
+  </div>
+</div>
+
+<div class="ov hide" id="midOv">
+  <div class="card">
+    <h2 id="midTitle">🎉 本关拼成！</h2>
+    <p id="midText"></p>
+    <button class="bigbtn" id="midBtn">下一关</button>
+  </div>
+</div>
+
+<div class="ov hide" id="endOv">
+  <div class="card">
+    <h2>🏆 字字归位 · 满腹成语</h2>
+    <p class="scoreLine">本局得分 <b id="endScore">0</b></p>
+    <p class="scoreLine">最高分 <b id="endBest">0</b></p>
+    <p>六关成语全部拼齐，收工！</p>
+    <button class="bigbtn" id="againBtn">再 来 一 局</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 工具 ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function $(id){return document.getElementById(id);}
+
+/* ---------- 声音 ---------- */
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,v,delay){ if(muted)return; const c=ac(); if(!c)return; const t=c.currentTime+(delay||0);
+  const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(v||0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+(d||0.12));
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+(d||0.12)+0.03); }
+const sPick=()=>beep(760,0.06,'square',0.06);
+const sPour=()=>{beep(520,0.08,'triangle',0.1);beep(660,0.08,'triangle',0.09,0.05);};
+const sLock=()=>{[660,880,1100,1320].forEach((f,i)=>beep(f,0.13,'triangle',0.11,i*0.07));};
+const sBad=()=>beep(190,0.16,'sawtooth',0.09);
+const sWin=()=>{[523,659,784,1047].forEach((f,i)=>beep(f,0.16,'triangle',0.12,i*0.1));};
+$('muteBtn').onclick=()=>{ muted=!muted; $('muteBtn').textContent=muted?'🔇':'🔊'; if(!muted)sPick(); };
+
+/* ---------- 数据：公版常见成语 ---------- */
+const LEVEL_IDIOMS=[
+  ['画龙点睛','守株待兔'],
+  ['一鸣惊人','亡羊补牢','井底之蛙'],
+  ['狐假虎威','刻舟求剑','掩耳盗铃','叶公好龙'],
+  ['胸有成竹','望梅止渴','杯弓蛇影','破釜沉舟','完璧归赵'],
+  ['卧薪尝胆','纸上谈兵','指鹿为马','滥竽充数','毛遂自荐','负荆请罪'],
+  ['精卫填海','夸父逐日','愚公移山','画蛇添足','对牛弹琴','拔苗助长','鹏程万里']
+];
+const SCRAMBLE=[10,16,24,32,42,55];
+const CAP=4;
+
+/* ---------- 状态 ---------- */
+let level=0, score=0, moves=0, tubes=[], locked=[], sel=-1, history=[], ended=false, seedTick=0;
+let best=0; try{ best=+localStorage.getItem('gh_zizi_best')||0; }catch(e){}
+
+/* ---------- 关卡生成：从完成态随机倒字打散（每步可逆 → 保底可解） ---------- */
+function genLevel(idx){
+  const idioms=LEVEL_IDIOMS[idx];
+  const rand=mulberry32(90210+idx*7919+(++seedTick)*131);
+  let ts=idioms.map(s=>s.split(''));
+  ts.push([],[]);
+  let lastF=-1,lastT=-1;
+  const totalMoves=SCRAMBLE[idx];
+  for(let m=0;m<totalMoves;m++){
+    const froms=[]; ts.forEach((t,i)=>{ if(t.length) froms.push(i); });
+    const f=froms[Math.floor(rand()*froms.length)];
+    const tos=[]; ts.forEach((t,i)=>{ if(i!==f&&t.length<CAP) tos.push(i); });
+    if(!tos.length) continue;
+    const t=tos[Math.floor(rand()*tos.length)];
+    if(f===lastT&&t===lastF&&rand()<0.75) continue;
+    ts[t].push(ts[f].pop()); lastF=f; lastT=t;
+  }
+  /* 若某管恰好已成成语，再把它的顶字挪走，避免开局白送 */
+  let guard=0;
+  while(guard++<40){
+    const hit=ts.findIndex(t=>t.length===CAP&&idioms.includes(t.join('')));
+    if(hit<0) break;
+    const tos=[]; ts.forEach((t,i)=>{ if(i!==hit&&t.length<CAP) tos.push(i); });
+    if(!tos.length) break;
+    const t=tos[Math.floor(rand()*tos.length)];
+    ts[t].push(ts[hit].pop());
+  }
+  return ts;
+}
+
+/* ---------- 渲染 ---------- */
+function lockedIdioms(){
+  const done=new Set();
+  tubes.forEach((t,i)=>{ if(locked[i]) done.add(t.join('')); });
+  return done;
+}
+function render(){
+  $('hLevel').textContent=(level+1)+' / '+LEVEL_IDIOMS.length;
+  $('hScore').textContent=score;
+  $('hMoves').textContent=moves;
+  const done=lockedIdioms();
+  $('hDone').textContent=done.size+' / '+LEVEL_IDIOMS[level].length;
+  const tg=$('targets'); tg.innerHTML='';
+  for(const s of LEVEL_IDIOMS[level]){
+    const el=document.createElement('span'); el.className='tg'+(done.has(s)?' done':'');
+    el.textContent=(done.has(s)?'✓ ':'')+s; tg.appendChild(el);
+  }
+  const wrap=$('tubes'); wrap.innerHTML='';
+  tubes.forEach((t,i)=>{
+    const tube=document.createElement('div');
+    tube.className='tube'+(locked[i]?' locked':'')+(sel===i?' sel':'');
+    t.forEach((ch,j)=>{
+      const tile=document.createElement('div'); tile.className='tile'+(j===t.length-1?' top':'');
+      tile.textContent=ch; tube.appendChild(tile);
+    });
+    if(locked[i]){ const b=document.createElement('span'); b.className='lockBadge'; b.textContent='🔒'; tube.appendChild(b); }
+    tube.onclick=()=>clickTube(i, tube);
+    wrap.appendChild(tube);
+  });
+  $('undoBtn').disabled=!history.length;
+}
+
+/* ---------- 玩法 ---------- */
+function snapshot(){ history.push(JSON.stringify({tubes:tubes, locked:locked, score:score, moves:moves})); if(history.length>200) history.shift(); }
+function clickTube(i, el){
+  if(ended) return;
+  if(locked[i]){ sBad(); return; }
+  if(sel===-1){
+    if(!tubes[i].length) return;
+    sel=i; sPick(); render(); return;
+  }
+  if(sel===i){ sel=-1; render(); return; }
+  if(tubes[i].length>=CAP){
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); sBad();
+    $('msg').textContent='🚫 这支管满啦，换一支。';
+    return;
+  }
+  snapshot();
+  tubes[i].push(tubes[sel].pop());
+  moves++; sel=-1; sPour(); render();
+  checkLock(i);
+}
+function checkLock(i){
+  if(tubes[i].length===CAP && LEVEL_IDIOMS[level].includes(tubes[i].join(''))){
+    locked[i]=true; score+=40; sLock();
+    const word=tubes[i].join('');
+    const toast=$('toast'); toast.textContent=word; toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 1100);
+    $('msg').textContent='🎉 成语达成：'+word+'（+40）';
+    render();
+    if(locked.every(Boolean)) setTimeout(levelClear, 650);
+  }
+}
+function levelClear(){
+  score+=60+level*20; render();
+  if(level>=LEVEL_IDIOMS.length-1){ gameOver(); return; }
+  sWin();
+  $('midTitle').textContent='🎉 第 '+(level+1)+' 关拼成！';
+  $('midText').textContent='当前分数 '+score+'，下一关成语更多、管子更挤。';
+  $('midOv').classList.remove('hide');
+}
+$('midBtn').onclick=()=>{ $('midOv').classList.add('hide'); level++; loadLevel(); sPick(); };
+function gameOver(){
+  ended=true;
+  if(score>best){ best=score; try{ localStorage.setItem('gh_zizi_best', best); }catch(e){} }
+  sWin();
+  $('endScore').textContent=score; $('endBest').textContent=best;
+  $('endOv').classList.remove('hide');
+}
+function loadLevel(){
+  tubes=genLevel(level); locked=tubes.map(()=>false);
+  sel=-1; history=[]; ended=false; moves=0;
+  $('msg').textContent='第 '+(level+1)+' 关：拼出 '+LEVEL_IDIOMS[level].length+' 个成语。';
+  render();
+}
+function startGame(){ level=0; score=0; loadLevel(); }
+$('undoBtn').onclick=()=>{
+  if(!history.length) return;
+  const s=JSON.parse(history.pop());
+  tubes=s.tubes; locked=s.locked; score=s.score; moves=s.moves; sel=-1; sPick(); render();
+  $('msg').textContent='已撤销一步。';
+};
+$('restartBtn').onclick=()=>{ loadLevel(); sPick(); };
+$('startBest').textContent='最高分：'+best;
+$('startBtn').onclick=()=>{ $('startOv').classList.add('hide'); sPick(); startGame(); };
+$('againBtn').onclick=()=>{ $('endOv').classList.add('hide'); sPick(); startGame(); };
+</script>
+</body>
+</html>

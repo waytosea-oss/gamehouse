@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>山海除妖录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0b1410;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 0%,#14301f,#0b1a12 70%)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.35)}
+#topbar a{color:#9fe8b1;text-decoration:none;font-size:15px}
+#topbar .t{font-weight:700;font-size:17px;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:16px;cursor:pointer}
+#hud{padding:8px 14px 4px;font-size:14px}
+#hpbar{height:12px;background:rgba(255,255,255,.15);border-radius:6px;overflow:hidden;margin:4px 0}
+#hpfill{height:100%;background:linear-gradient(90deg,#ff5f4d,#ffb03a);width:100%;transition:width .2s}
+#xpbar{height:8px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;margin:4px 0 6px}
+#xpfill{height:100%;background:linear-gradient(90deg,#37d67a,#a8ffb0);width:0%}
+#hudrow{display:flex;justify-content:space-between;color:#cfeeda}
+#hudrow b{color:#ffd34d}
+#cv{display:block;margin:2px auto 10px;background:radial-gradient(90% 90% at 50% 45%,#1d4630,#10241a 75%);border-radius:10px;touch-action:none;width:94%}
+.overlay{position:fixed;inset:0;background:rgba(4,10,6,.84);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{background:linear-gradient(160deg,#173d27,#0d2317);border:2px solid #2f7a4c;border-radius:18px;padding:26px 22px;max-width:410px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h1{font-size:29px;letter-spacing:3px;margin-bottom:8px}
+.card .em{font-size:50px;margin:4px 0}
+.card p{color:#cfeeda;font-size:15px;line-height:1.7;margin:6px 0}
+.card .best{color:#ffd34d;font-size:14px;margin-top:10px}
+.bigbtn{background:linear-gradient(180deg,#57d977,#2ea85c);border:none;color:#06280f;font-weight:800;font-size:18px;padding:12px 34px;border-radius:999px;cursor:pointer;box-shadow:0 4px 14px rgba(46,168,92,.5);letter-spacing:2px}
+.bigbtn:active{transform:scale(.96)}
+.hide{display:none!important}
+.upcard{display:block;width:100%;text-align:left;background:rgba(255,255,255,.08);border:1.5px solid #3fae6a;border-radius:12px;color:#fff;padding:13px 15px;margin:9px 0;font-size:16px;cursor:pointer}
+.upcard small{display:block;color:#a9d8ba;font-size:13px;margin-top:3px}
+.upcard:active{background:rgba(87,217,119,.25)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><a href="../index.html">← 大厅</a><span class="t">🐉 山海除妖录</span><button id="muteBtn">🔊</button></div>
+  <div id="hud">
+    <div id="hudrow"><span>⏱ <b id="hTime">0:00</b></span><span>💀 击杀 <b id="hKill">0</b></span><span>⭐ Lv.<b id="hLvl">1</b></span><span>🏆 <b id="hScore">0</b></span></div>
+    <div id="hpbar"><div id="hpfill"></div></div>
+    <div id="xpbar"><div id="xpfill"></div></div>
+  </div>
+  <canvas id="cv" width="440" height="590"></canvas>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="em">🧙</div>
+    <h1>山海除妖录</h1>
+    <p>拖动屏幕（或 WASD / 方向键）走位，小道士自动放符打妖。<br>捡经验宝石升级，三选一强化自己。<br>3 分钟大妖 Boss 现身：击败它，或活满 5 分钟，即可除妖凯旋！</p>
+    <button class="bigbtn" id="startBtn">开始除妖</button>
+    <div class="best">🏆 最高分：<span id="bestStart">0</span></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="upOv">
+  <div class="card">
+    <h1 style="font-size:24px">⭐ 升级！选一项强化</h1>
+    <div id="upList"></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="em" id="endEm">🎉</div>
+    <h1 id="endTitle">除妖凯旋！</h1>
+    <p id="endText"></p>
+    <p>本局得分 <b style="color:#ffd34d" id="endScore">0</b></p>
+    <div class="best">🏆 最高分：<span id="bestEnd">0</span></div>
+    <div style="margin-top:16px"><button class="bigbtn" id="againBtn">再来一局</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,g,slideTo){ if(muted||!ac())return; const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+d); gn.gain.setValueAtTime(g||.13,t); gn.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t+d); }
+function sfx(n){ if(n==='shoot')beep(880,.06,'square',.05,520); else if(n==='hit')beep(300,.05,'square',.06,180); else if(n==='xp')beep(1175,.07,'sine',.08,1568); else if(n==='hurt')beep(160,.16,'sawtooth',.15,70); else if(n==='up'){[659,784,988].forEach((f,i)=>setTimeout(()=>beep(f,.12,'triangle',.13),i*70));} else if(n==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle',.15),i*110));} else if(n==='boss')beep(98,.5,'sawtooth',.2,55); }
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; });
+
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const W=440,H=590, SLUG='chuyao';
+const best=()=>+(localStorage.getItem('gh_'+SLUG+'_best')||0);
+document.getElementById('bestStart').textContent=best();
+
+/* 图片（失败 emoji 兜底） */
+function loadImg(src,em,size){ const o={img:new Image(),ok:false,em,size}; o.img.onload=()=>{o.ok=true;}; o.img.onerror=()=>{o.ok=false;}; o.img.src=src; return o; }
+const SPR={ hero:loadImg('../assets/hero.png','🧙',54), fox:loadImg('../assets/mob_fox.png','🦊',44), boar:loadImg('../assets/mob_boar.png','🐗',52), snake:loadImg('../assets/mob_snake.png','🐍',42), boss:loadImg('../assets/boss.png','👹',110) };
+function drawSpr(s,x,y,face){ if(s.ok){ ctx.drawImage(s.img,x-s.size/2,y-s.size/2,s.size,s.size); } else { ctx.font=s.size+'px sans-serif'; ctx.fillText(s.em,x,y); } }
+
+let P, mobs, shots, gems, parts, state, tGame, spawnT, fireT, kills, score, bossRef, bossWarned, raf, lastTs;
+let keys={}, joy={on:false,sx:0,sy:0,dx:0,dy:0};
+const UPGRADES=[
+ {n:'🔥 符火精进', d:'符咒伤害 +30%', f:()=>P.dmg*=1.3},
+ {n:'⚡ 疾风符步', d:'放符速度 +25%', f:()=>P.rate*=0.78},
+ {n:'✨ 连珠符', d:'每次多放 1 张符', f:()=>P.count+=1},
+ {n:'👟 神行太保', d:'移动速度 +15%', f:()=>P.spd*=1.15},
+ {n:'❤️ 金刚体魄', d:'生命上限 +25 并回复 25', f:()=>{P.maxhp+=25;P.hp=Math.min(P.maxhp,P.hp+25);}},
+ {n:'🧲 引灵磁场', d:'捡宝石范围 +60%', f:()=>P.magnet*=1.6},
+ {n:'💚 回春术', d:'立刻回复 40% 生命', f:()=>{P.hp=Math.min(P.maxhp,P.hp+P.maxhp*.4);}},
+ {n:'🎯 破妖重符', d:'符咒穿透 +1 个敌人', f:()=>{P.pierce+=1;}}
+];
+function reset(){
+  P={x:W/2,y:H/2,hp:100,maxhp:100,spd:168,dmg:12,rate:.55,count:1,pierce:0,magnet:56,lvl:1,xp:0,xpNext:5,face:1};
+  mobs=[]; shots=[]; gems=[]; parts=[]; tGame=0; spawnT=0; fireT=0; kills=0; score=0; bossRef=null; bossWarned=false; state='play';
+}
+function startGame(){
+  reset();
+  document.getElementById('startOv').classList.add('hide');
+  document.getElementById('endOv').classList.add('hide');
+  document.getElementById('upOv').classList.add('hide');
+  updHud();
+  if(raf)cancelAnimationFrame(raf); lastTs=0; raf=requestAnimationFrame(loop);
+}
+function xpNeed(l){ return 5+ (l-1)*4; }
+function spawnMob(boss){
+  const side=Math.floor(Math.random()*4); let x,y;
+  if(side===0){x=Math.random()*W;y=-30;} else if(side===1){x=Math.random()*W;y=H+30;} else if(side===2){x=-30;y=Math.random()*H;} else {x=W+30;y=Math.random()*H;}
+  const mins=tGame/60;
+  if(boss){ const b={x,y,spr:SPR.boss,hp:900+mins*120,maxhp:900+mins*120,spd:52,dmg:22,r:44,boss:true,xpv:30}; mobs.push(b); bossRef=b; return; }
+  const r=Math.random(); let m;
+  const hpMul=1+mins*.55;
+  if(r<.45) m={x,y,spr:SPR.fox,hp:16*hpMul,spd:96+Math.random()*22,dmg:8,r:19,xpv:1};
+  else if(r<.78) m={x,y,spr:SPR.snake,hp:26*hpMul,spd:74,dmg:11,r:18,xpv:1};
+  else m={x,y,spr:SPR.boar,hp:55*hpMul,spd:52,dmg:16,r:24,xpv:2};
+  m.maxhp=m.hp; mobs.push(m);
+}
+function fire(){
+  if(!mobs.length)return;
+  let sorted=mobs.slice().sort((a,b)=>((a.x-P.x)**2+(a.y-P.y)**2)-((b.x-P.x)**2+(b.y-P.y)**2));
+  for(let i=0;i<Math.min(P.count,sorted.length);i++){
+    const m=sorted[i], dx=m.x-P.x, dy=m.y-P.y, d=Math.hypot(dx,dy)||1;
+    shots.push({x:P.x,y:P.y-8,vx:dx/d*430,vy:dy/d*430,dmg:P.dmg,pierce:P.pierce});
+  }
+  sfx('shoot');
+}
+function levelUp(){
+  state='up'; sfx('up');
+  const pool=UPGRADES.slice(); const picks=[];
+  for(let i=0;i<3;i++){ picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+  const list=document.getElementById('upList'); list.innerHTML='';
+  picks.forEach(u=>{ const b=document.createElement('button'); b.className='upcard'; b.innerHTML=u.n+'<small>'+u.d+'</small>';
+    b.addEventListener('click',()=>{ u.f(); document.getElementById('upOv').classList.add('hide'); state='play'; sfx('xp'); updHud(); });
+    list.appendChild(b); });
+  document.getElementById('upOv').classList.remove('hide');
+}
+function endGame(win){
+  state='over';
+  score+= win? 1000 : Math.floor(tGame)*2;
+  const b=best(); if(score>b)localStorage.setItem('gh_'+SLUG+'_best',score);
+  document.getElementById('endEm').textContent=win?'🏆':'☠️';
+  document.getElementById('endTitle').textContent=win?'除妖凯旋！':'道陨身死';
+  document.getElementById('endText').textContent=(win?'小道士荡平群妖，山海重归清净！':'小道士倒在了妖潮里……')+' 坚持 '+fmtT(tGame)+'，击杀 '+kills+' 妖，等级 '+P.lvl+'。';
+  document.getElementById('endScore').textContent=score;
+  document.getElementById('bestEnd').textContent=best();
+  document.getElementById('endOv').classList.remove('hide');
+  sfx(win?'win':'hurt');
+}
+function fmtT(s){ s=Math.floor(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function updHud(){
+  document.getElementById('hTime').textContent=fmtT(tGame)+(bossRef?' · 👹Boss战':'');
+  document.getElementById('hKill').textContent=kills;
+  document.getElementById('hLvl').textContent=P.lvl;
+  document.getElementById('hScore').textContent=score;
+  document.getElementById('hpfill').style.width=Math.max(0,P.hp/P.maxhp*100)+'%';
+  document.getElementById('xpfill').style.width=Math.min(100,P.xp/P.xpNext*100)+'%';
+}
+
+/* 输入 */
+function cvPos(e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height}; }
+cv.addEventListener('pointerdown',e=>{ const p=cvPos(e); joy.on=true; joy.sx=p.x; joy.sy=p.y; joy.dx=0; joy.dy=0; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove',e=>{ if(!joy.on)return; const p=cvPos(e); let dx=p.x-joy.sx, dy=p.y-joy.sy; const d=Math.hypot(dx,dy); if(d>46){ dx=dx/d*46; dy=dy/d*46; } joy.dx=dx/46; joy.dy=dy/46; });
+const joyEnd=()=>{ joy.on=false; joy.dx=0; joy.dy=0; };
+cv.addEventListener('pointerup',joyEnd); cv.addEventListener('pointercancel',joyEnd);
+window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; });
+window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+document.getElementById('startBtn').addEventListener('click',()=>{ ac(); startGame(); });
+document.getElementById('againBtn').addEventListener('click',()=>{ ac(); startGame(); });
+
+function update(dt){
+  tGame+=dt;
+  if(tGame>=300){ endGame(true); return; }
+  if(tGame>=180&&!bossWarned){ bossWarned=true; spawnMob(true); sfx('boss'); }
+  /* 移动 */
+  let mx=joy.dx, my=joy.dy;
+  if(keys['a']||keys['arrowleft'])mx-=1; if(keys['d']||keys['arrowright'])mx+=1;
+  if(keys['w']||keys['arrowup'])my-=1; if(keys['s']||keys['arrowdown'])my+=1;
+  const md=Math.hypot(mx,my); if(md>1){ mx/=md; my/=md; }
+  if(mx)P.face=mx>0?1:-1;
+  P.x=Math.max(24,Math.min(W-24,P.x+mx*P.spd*dt));
+  P.y=Math.max(24,Math.min(H-24,P.y+my*P.spd*dt));
+  /* 刷怪 */
+  spawnT-=dt;
+  const interval=Math.max(.38, 1.15 - tGame*.004);
+  if(spawnT<=0&&mobs.length<70){ spawnMob(false); if(tGame>60)spawnMob(false); if(tGame>150&&Math.random()<.5)spawnMob(false); spawnT=interval; }
+  /* 开火 */
+  fireT-=dt; if(fireT<=0){ fire(); fireT=P.rate; }
+  /* 子弹 */
+  for(let i=shots.length-1;i>=0;i--){ const s=shots[i]; s.x+=s.vx*dt; s.y+=s.vy*dt;
+    if(s.x<-20||s.x>W+20||s.y<-20||s.y>H+20){ shots.splice(i,1); continue; }
+    for(let j=mobs.length-1;j>=0;j--){ const m=mobs[j];
+      if(Math.abs(s.x-m.x)<m.r+6&&Math.abs(s.y-m.y)<m.r+6){ m.hp-=s.dmg; sfx('hit'); parts.push({x:m.x,y:m.y,t:.25,txt:'✦',col:'#ffe27a'});
+        if(m.hp<=0){ killMob(j); }
+        if(s.pierce>0){ s.pierce--; } else { shots.splice(i,1); }
+        break; } }
+  }
+  /* 妖怪 */
+  for(let i=mobs.length-1;i>=0;i--){ const m=mobs[i]; const dx=P.x-m.x, dy=P.y-m.y, d=Math.hypot(dx,dy)||1;
+    m.x+=dx/d*m.spd*dt; m.y+=dy/d*m.spd*dt;
+    if(d<m.r+20){ P.hp-=m.dmg*dt*1.6; if(Math.random()<dt*4)sfx('hurt'); if(P.hp<=0){ P.hp=0; updHud(); endGame(false); return; } }
+  }
+  /* 宝石 */
+  for(let i=gems.length-1;i>=0;i--){ const g=gems[i]; const dx=P.x-g.x, dy=P.y-g.y, d=Math.hypot(dx,dy)||1;
+    if(d<P.magnet){ g.x+=dx/d*260*dt; g.y+=dy/d*260*dt; }
+    if(d<26){ gems.splice(i,1); P.xp+=g.v; sfx('xp'); score+=2;
+      if(P.xp>=P.xpNext){ P.xp-=P.xpNext; P.lvl++; P.xpNext=xpNeed(P.lvl); updHud(); levelUp(); } }
+  }
+  for(let i=parts.length-1;i>=0;i--){ parts[i].t-=dt; parts[i].y-=30*dt; if(parts[i].t<=0)parts.splice(i,1); }
+  updHud();
+}
+function killMob(j){
+  const m=mobs[j]; mobs.splice(j,1); kills++; score+=10;
+  gems.push({x:m.x,y:m.y,v:m.xpv});
+  parts.push({x:m.x,y:m.y,t:.4,txt:'💥',col:'#fff'});
+  if(m.boss){ bossRef=null; endGame(true); }
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(255,255,255,.05)';
+  for(let i=0;i<26;i++){ const gx=(i*97)%W, gy=(i*151)%H; ctx.fillRect(gx,gy,3,3); }
+  gems.forEach(g=>{ ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💠',g.x,g.y); });
+  mobs.forEach(m=>{ ctx.textAlign='center'; ctx.textBaseline='middle'; drawSpr(m.spr,m.x,m.y);
+    if(m.hp<m.maxhp){ ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(m.x-20,m.y-m.r-13,40,5); ctx.fillStyle='#ff6b57'; ctx.fillRect(m.x-20,m.y-m.r-13,40*Math.max(0,m.hp/m.maxhp),5); } });
+  shots.forEach(s=>{ ctx.font='17px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🧧',s.x,s.y); });
+  /* 主角 */
+  ctx.save(); ctx.translate(P.x,P.y); ctx.scale(P.face,1); ctx.textAlign='center'; ctx.textBaseline='middle'; drawSpr(SPR.hero,0,0); ctx.restore();
+  ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(P.x-24,P.y-42,48,6);
+  ctx.fillStyle='#7dff8a'; ctx.fillRect(P.x-24,P.y-42,48*Math.max(0,P.hp/P.maxhp),6);
+  parts.forEach(p=>{ ctx.globalAlpha=Math.max(0,p.t*2.4); ctx.font='16px sans-serif'; ctx.fillStyle=p.col; ctx.textAlign='center'; ctx.fillText(p.txt,p.x,p.y); ctx.globalAlpha=1; });
+  if(joy.on){ ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(joy.sx,joy.sy,46,0,7); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc(joy.sx+joy.dx*46,joy.sy+joy.dy*46,18,0,7); ctx.fill(); }
+  if(state==='play'&&tGame<4){ ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.fillText('拖动屏幕移动 · 自动放符', W/2, H-16); }
+}
+function loop(ts){
+  const dt=Math.min(.05,(ts-lastTs)/1000||0.016); lastTs=ts;
+  if(state==='play'){ update(dt); }
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+/* 初始画面 */
+reset(); state='idle'; draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>百鸟归巢 · 游戏大厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:linear-gradient(165deg,#0d2f45,#12506b 55%,#1a7a6d); color:#eefaf4; min-height:100vh; user-select:none; -webkit-user-select:none; }
+  #app { max-width:480px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:6px 2px 10px; }
+  header a { color:#aef3d2; text-decoration:none; font-size:15px; background:rgba(255,255,255,.1); padding:6px 12px; border-radius:999px; }
+  header h1 { font-size:20px; letter-spacing:2px; }
+  #muteBtn { background:rgba(255,255,255,.12); border:none; color:#fff; font-size:17px; width:38px; height:38px; border-radius:50%; cursor:pointer; }
+  #hud { display:flex; gap:8px; margin-bottom:10px; }
+  .chip { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(174,243,210,.3); border-radius:10px; padding:6px 4px; text-align:center; font-size:13px; }
+  .chip b { display:block; font-size:17px; color:#aef3d2; }
+  #rule { font-size:12.5px; color:#cfeee0; background:rgba(0,0,0,.22); border-radius:10px; padding:7px 10px; margin-bottom:12px; line-height:1.6; }
+  #boardWrap { display:flex; justify-content:center; }
+  #board { display:grid; gap:6px; background:rgba(0,0,0,.25); border:1px solid rgba(174,243,210,.3); padding:10px; border-radius:16px; }
+  .cell { position:relative; border-radius:12px; background:rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; }
+  .cell.has { background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.07)); cursor:pointer; box-shadow:inset 0 0 0 1px rgba(255,255,255,.25); }
+  .cell.has:active { transform:scale(.94); }
+  .bird { font-size:30px; line-height:1; transition:transform .25s ease, opacity .25s ease; pointer-events:none; }
+  .dirBadge { position:absolute; right:3px; bottom:3px; width:19px; height:19px; border-radius:50%; background:#ffb703; color:#5b3400; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,.35); pointer-events:none; }
+  .dirBadge span { display:block; transition:transform .3s ease; }
+  .cell.shake { animation:shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  .cell.spin .dirBadge { animation:spinB .35s ease; }
+  @keyframes spinB { 0%{transform:rotate(0) scale(1);} 50%{transform:rotate(50deg) scale(1.25);} 100%{transform:rotate(0) scale(1);} }
+  #msg { text-align:center; min-height:24px; font-size:14px; color:#d9f7e8; margin-top:12px; }
+  #btnRow { display:flex; gap:10px; justify-content:center; margin-top:8px; }
+  .mini { background:rgba(255,255,255,.14); color:#eefaf4; border:1px solid rgba(174,243,210,.4); padding:8px 18px; border-radius:999px; font-size:14px; cursor:pointer; }
+  .ov { position:fixed; inset:0; background:rgba(5,20,28,.78); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; }
+  .ov.hide { display:none; }
+  .card { background:linear-gradient(165deg,#0e4059,#14655a); border:1px solid rgba(174,243,210,.5); border-radius:18px; padding:26px 22px; max-width:350px; width:100%; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .card h2 { font-size:25px; letter-spacing:2px; margin-bottom:10px; }
+  .card p { font-size:14px; line-height:1.75; color:#d5f2e4; margin-bottom:14px; }
+  .card .best { font-size:13px; color:#aef3d2; margin-bottom:16px; }
+  .bigbtn { background:linear-gradient(180deg,#ffd166,#f49f0a); color:#402a00; border:none; font-size:18px; font-weight:700; padding:13px 38px; border-radius:999px; cursor:pointer; box-shadow:0 6px 16px rgba(244,159,10,.45); letter-spacing:2px; }
+  .bigbtn:active { transform:scale(.96); }
+  .scoreLine { font-size:16px; margin:6px 0; }
+  .scoreLine b { color:#ffd166; font-size:22px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a href="../index.html">← 大厅</a>
+    <h1>🐦 百鸟归巢</h1>
+    <button id="muteBtn" title="静音">🔊</button>
+  </header>
+
+  <div id="hud">
+    <div class="chip">关卡<b id="hLevel">1 / 8</b></div>
+    <div class="chip">分数<b id="hScore">0</b></div>
+    <div class="chip">剩余鸟儿<b id="hLeft">0</b></div>
+  </div>
+
+  <div id="rule">点一只鸟：它头顶箭头方向的路没被挡住，就能飞走。<span id="rotNote"></span></div>
+
+  <div id="boardWrap"><div id="board"></div></div>
+
+  <div id="msg"></div>
+  <div id="btnRow"><button class="mini" id="restartBtn">↺ 重开本关</button></div>
+</div>
+
+<div class="ov" id="startOv">
+  <div class="card">
+    <h2>🐦 百鸟归巢</h2>
+    <p>每只鸟都朝着箭头指的方向。点它一下：<br>前路没被别的鸟挡住，它就飞走啦。<br>从第 3 关起，鸟飞走时，身边的鸟会被惊得<b>转向 90°</b>，要算连锁哦。</p>
+    <div class="best" id="startBest">最高分：0</div>
+    <button class="bigbtn" id="startBtn">放 鸟 归 巢</button>
+  </div>
+</div>
+
+<div class="ov hide" id="midOv">
+  <div class="card">
+    <h2 id="midTitle">🎉 全部飞走！</h2>
+    <p id="midText"></p>
+    <button class="bigbtn" id="midBtn">下一关</button>
+  </div>
+</div>
+
+<div class="ov hide" id="stuckOv">
+  <div class="card">
+    <h2>😵 卡住啦</h2>
+    <p>剩下的鸟互相挡着，谁都飞不出去。<br>换个飞走顺序再试一次吧。</p>
+    <button class="bigbtn" id="stuckBtn">重 开 本 关</button>
+  </div>
+</div>
+
+<div class="ov hide" id="endOv">
+  <div class="card">
+    <h2>🏆 百鸟朝凤！</h2>
+    <p class="scoreLine">本局得分 <b id="endScore">0</b></p>
+    <p class="scoreLine">最高分 <b id="endBest">0</b></p>
+    <p>八关全部清空，鸟儿们都回家啦。</p>
+    <button class="bigbtn" id="againBtn">再 来 一 局</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 工具 ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(arr,rand){for(let i=arr.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));const t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function $(id){return document.getElementById(id);}
+
+/* ---------- 声音 ---------- */
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,v,delay){ if(muted)return; const c=ac(); if(!c)return; const t=c.currentTime+(delay||0);
+  const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(v||0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+(d||0.12));
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+(d||0.12)+0.03); }
+function slide(f0,f1,d,v,delay){ if(muted)return; const c=ac(); if(!c)return; const t=c.currentTime+(delay||0);
+  const o=c.createOscillator(),g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+d);
+  g.gain.setValueAtTime(v||0.08,t); g.gain.exponentialRampToValueAtTime(0.001,t+d);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+d+0.03); }
+const sClick=()=>beep(650,0.05,'square',0.05);
+const sFly=()=>{ slide(500,1400,0.22,0.09); beep(1200,0.08,'triangle',0.06,0.05); };
+const sTurn=()=>beep(880,0.07,'triangle',0.07);
+const sBad=()=>{ beep(200,0.15,'sawtooth',0.09); };
+const sWin=()=>{[523,659,784,1047,1319].forEach((f,i)=>beep(f,0.15,'triangle',0.11,i*0.09));};
+$('muteBtn').onclick=()=>{ muted=!muted; $('muteBtn').textContent=muted?'🔇':'🔊'; if(!muted)sClick(); };
+
+/* ---------- 规则核心 ---------- */
+const DIRS=[[-1,0],[0,1],[1,0],[0,-1]];      /* 上 右 下 左 */
+const ARROW='➤';
+const ROTATE=[-90,0,90,180];                 /* ➤ 默认朝右 */
+const BIRDS=['🐦','🕊️','🦜','🦩','🦢','🦉','🐤','🦤'];
+const CONF=[
+  {R:4,C:4,n:5, rot:false},
+  {R:4,C:4,n:7, rot:false},
+  {R:5,C:5,n:8, rot:true},
+  {R:5,C:5,n:10,rot:true},
+  {R:5,C:5,n:11,rot:true},
+  {R:6,C:6,n:12,rot:true},
+  {R:6,C:6,n:14,rot:true},
+  {R:6,C:6,n:15,rot:true}
+];
+const key=(r,c)=>r+','+c;
+function parseKey(k){ const p=k.split(','); return [+p[0],+p[1]]; }
+function clearPath(b, cell, d, R, C){
+  let [r,c]=parseKey(cell); const [dr,dc]=DIRS[d];
+  r+=dr; c+=dc;
+  while(r>=0&&r<R&&c>=0&&c<C){ if(b.has(key(r,c))) return false; r+=dr; c+=dc; }
+  return true;
+}
+function nbrCells(cell,R,C){ const [r,c]=parseKey(cell); const out=[];
+  for(const [dr,dc] of DIRS){ const nr=r+dr, nc=c+dc; if(nr>=0&&nr<R&&nc>=0&&nc<C) out.push(key(nr,nc)); } return out; }
+function rayEmpty(placed, r, c, d, R, C){
+  const [dr,dc]=DIRS[d]; let nr=r+dr, nc=c+dc;
+  while(nr>=0&&nr<R&&nc>=0&&nc<C){ if(placed.has(key(nr,nc))) return false; nr+=dr; nc+=dc; }
+  return true;
+}
+/* 构造式生成：逆序放鸟，每只新鸟的逃逸路线不被已放的鸟挡 → 静态必有解 */
+function genBoard(cfg, rand){
+  const placed=new Map(); let guard=0;
+  while(placed.size<cfg.n && guard++<800){
+    const r=Math.floor(rand()*cfg.R), c=Math.floor(rand()*cfg.C), k=key(r,c);
+    if(placed.has(k)) continue;
+    const dirs=shuffle([0,1,2,3], rand);
+    for(const d of dirs){ if(rayEmpty(placed, r, c, d, cfg.R, cfg.C)){ placed.set(k,d); break; } }
+  }
+  if(placed.size<cfg.n) return null;
+  return { birds:placed, order:[...placed.keys()].reverse() };
+}
+/* DFS 求解验证（含转向连锁），带提示顺序与节点上限 */
+function solveBoard(birds0, cfg, order){
+  let nodes=0; const memo=new Set();
+  function stateKey(b){ return [...b.entries()].map(([k,v])=>k+':'+v).sort().join('|'); }
+  function dfs(b){
+    if(b.size===0) return true;
+    if(++nodes>60000) return false;
+    const sk=stateKey(b); if(memo.has(sk)) return false; memo.add(sk);
+    const cand=[];
+    for(const cell of order){ if(b.has(cell)&&clearPath(b,cell,b.get(cell),cfg.R,cfg.C)) cand.push(cell); }
+    for(const cell of b.keys()){ if(!cand.includes(cell)&&clearPath(b,cell,b.get(cell),cfg.R,cfg.C)) cand.push(cell); }
+    for(const cell of cand){
+      const nb=new Map(b); nb.delete(cell);
+      if(cfg.rot){ for(const nk of nbrCells(cell,cfg.R,cfg.C)){ if(nb.has(nk)) nb.set(nk,(nb.get(nk)+1)%4); } }
+      if(dfs(nb)) return true;
+      if(nodes>60000) return false;
+    }
+    return false;
+  }
+  return dfs(new Map(birds0));
+}
+function buildLevel(idx){
+  let cfg={...CONF[idx]};
+  for(let round=0; round<3; round++){
+    for(let att=0; att<40; att++){
+      const rand=mulberry32(77003+idx*104729+round*1009+att*37);
+      const g=genBoard(cfg, rand);
+      if(g && solveBoard(g.birds, cfg, g.order)) return g.birds;
+    }
+    cfg={...cfg, n:Math.max(4, cfg.n-2)}; /* 实在不行就少放两只，保证能玩 */
+  }
+  const g=genBoard({...CONF[idx], n:4}, mulberry32(42+idx));
+  return g?g.birds:new Map();
+}
+
+/* ---------- 状态与渲染 ---------- */
+let level=0, score=0, scoreAtStart=0, birds=new Map(), cfg=CONF[0], anim=false, ended=false;
+let best=0; try{ best=+localStorage.getItem('gh_bainiao_best')||0; }catch(e){}
+function render(spun){
+  $('hLevel').textContent=(level+1)+' / '+CONF.length;
+  $('hScore').textContent=score;
+  $('hLeft').textContent=birds.size;
+  $('rotNote').textContent=cfg.rot?'⚠️ 本关起：鸟飞走时，四邻的鸟会顺时针转向 90°！':'';
+  const board=$('board');
+  const cellPx = cfg.C>=6?56:(cfg.C>=5?64:72);
+  board.style.gridTemplateColumns='repeat('+cfg.C+','+cellPx+'px)';
+  board.innerHTML='';
+  for(let r=0;r<cfg.R;r++) for(let c=0;c<cfg.C;c++){
+    const k=key(r,c), cell=document.createElement('div');
+    cell.className='cell'; cell.style.width=cellPx+'px'; cell.style.height=cellPx+'px';
+    cell.dataset.cell=k;
+    if(birds.has(k)){
+      cell.classList.add('has');
+      const b=document.createElement('div'); b.className='bird';
+      b.textContent=BIRDS[(r*cfg.C+c)%BIRDS.length];
+      if(cellPx<=56) b.style.fontSize='24px';
+      const badge=document.createElement('div'); badge.className='dirBadge';
+      const sp=document.createElement('span'); sp.textContent=ARROW;
+      sp.style.transform='rotate('+ROTATE[birds.get(k)]+'deg)';
+      badge.appendChild(sp); cell.appendChild(b); cell.appendChild(badge);
+      if(spun && spun.includes(k)) cell.classList.add('spin');
+      cell.onclick=()=>clickBird(k, cell);
+    }
+    board.appendChild(cell);
+  }
+}
+function clickBird(k, cellEl){
+  if(anim||ended) return;
+  const d=birds.get(k); if(d===undefined) return;
+  if(!clearPath(birds, k, d, cfg.R, cfg.C)){
+    cellEl.classList.remove('shake'); void cellEl.offsetWidth; cellEl.classList.add('shake');
+    sBad(); $('msg').textContent='🚧 前路被挡住啦，先放走挡路的那只。';
+    return;
+  }
+  anim=true; sFly();
+  const birdEl=cellEl.querySelector('.bird');
+  const [dr,dc]=DIRS[d];
+  const dist = dr<0 ? parseKey(k)[0]+1 : dr>0 ? cfg.R-parseKey(k)[0] : dc<0 ? parseKey(k)[1]+1 : cfg.C-parseKey(k)[1];
+  if(birdEl) birdEl.style.transform='translate('+(dc*dist*66)+'px,'+(dr*dist*66)+'px) scale(.6)';
+  if(birdEl) birdEl.style.opacity='0';
+  setTimeout(()=>{
+    birds.delete(k); score+=10;
+    const spun=[];
+    if(cfg.rot){
+      for(const nk of nbrCells(k, cfg.R, cfg.C)){
+        if(birds.has(nk)){ birds.set(nk,(birds.get(nk)+1)%4); spun.push(nk); }
+      }
+      if(spun.length) sTurn();
+    }
+    anim=false; render(spun);
+    if(birds.size===0){ levelClear(); return; }
+    const anyMove=[...birds.entries()].some(([cell,dd])=>clearPath(birds,cell,dd,cfg.R,cfg.C));
+    if(!anyMove){ $('stuckOv').classList.remove('hide'); sBad(); }
+    else $('msg').textContent='飞走一只！还剩 '+birds.size+' 只。';
+  },260);
+}
+function levelClear(){
+  score+=40+level*10; render();
+  if(level>=CONF.length-1){ gameOver(); return; }
+  sWin();
+  $('midTitle').textContent='🎉 第 '+(level+1)+' 关清空！';
+  $('midText').textContent='当前分数 '+score+'。下一关鸟更多'+(CONF[level+1].rot?'，转向连锁继续生效':'')+'。';
+  $('midOv').classList.remove('hide');
+}
+$('midBtn').onclick=()=>{ $('midOv').classList.add('hide'); level++; loadLevel(); sClick(); };
+function gameOver(){
+  ended=true;
+  if(score>best){ best=score; try{ localStorage.setItem('gh_bainiao_best', best); }catch(e){} }
+  sWin();
+  $('endScore').textContent=score; $('endBest').textContent=best;
+  $('endOv').classList.remove('hide');
+}
+function loadLevel(){
+  cfg=CONF[level]; birds=buildLevel(level); scoreAtStart=score; ended=false; anim=false;
+  $('msg').textContent='第 '+(level+1)+' 关：让 '+birds.size+' 只鸟都飞出去。';
+  render();
+}
+function startGame(){ level=0; score=0; loadLevel(); }
+$('restartBtn').onclick=()=>{ if(anim) return; score=scoreAtStart; loadLevel(); sClick(); };
+$('stuckBtn').onclick=()=>{ $('stuckOv').classList.add('hide'); score=scoreAtStart; loadLevel(); sClick(); };
+$('startBest').textContent='最高分：'+best;
+$('startBtn').onclick=()=>{ $('startOv').classList.add('hide'); sClick(); startGame(); };
+$('againBtn').onclick=()=>{ $('endOv').classList.add('hide'); sClick(); startGame(); };
+</script>
+</body>
+</html>

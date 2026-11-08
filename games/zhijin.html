@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>织锦坊 · 游戏大厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:linear-gradient(160deg,#2a1030,#4a1042 55%,#701b4d); color:#fdf3e3; min-height:100vh; }
+  #app { max-width:480px; margin:0 auto; padding:10px 12px 28px; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:6px 2px 10px; }
+  header a { color:#ffd98a; text-decoration:none; font-size:15px; background:rgba(255,255,255,.1); padding:6px 12px; border-radius:999px; }
+  header h1 { font-size:20px; letter-spacing:2px; }
+  #muteBtn { background:rgba(255,255,255,.12); border:none; color:#fff; font-size:17px; width:38px; height:38px; border-radius:50%; cursor:pointer; }
+  #hud { display:flex; gap:8px; justify-content:space-between; margin-bottom:10px; }
+  .chip { flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,217,138,.25); border-radius:10px; padding:6px 4px; text-align:center; font-size:13px; }
+  .chip b { display:block; font-size:17px; color:#ffd98a; }
+  #clothBox { background:rgba(0,0,0,.25); border:1px solid rgba(255,217,138,.3); border-radius:12px; padding:10px; margin-bottom:12px; }
+  #clothBox .lbl { font-size:12px; color:#ffd98a; letter-spacing:2px; margin-bottom:7px; }
+  #cloth { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; min-height:22px; }
+  #cloth i { height:20px; border-radius:4px; background:rgba(255,255,255,.06); display:block; }
+  #cloth i.full { box-shadow:inset 0 -3px 5px rgba(0,0,0,.3), inset 0 2px 3px rgba(255,255,255,.35); }
+  .beltLbl { font-size:12px; color:#ffd98a; letter-spacing:2px; margin:2px 0 6px; display:flex; justify-content:space-between;}
+  #belt { position:relative; overflow:hidden; background:#23232f; border-radius:12px; border:1px solid rgba(255,255,255,.15); height:92px; margin-bottom:14px; }
+  #belt::before { content:''; position:absolute; top:0; bottom:0; left:-52px; width:calc(100% + 104px); background:repeating-linear-gradient(90deg,#33334a 0 26px,#262633 26px 52px); animation:beltmove 1.1s linear infinite; }
+  @keyframes beltmove { to { transform:translateX(52px); } }
+  #beltRow { position:relative; z-index:2; display:flex; gap:6px; align-items:center; height:100%; padding:0 8px; overflow:hidden; }
+  .spool { width:40px; height:54px; flex:0 0 auto; border-radius:7px; border:3px solid #5d4037; border-top-width:8px; border-bottom-width:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:repeating-linear-gradient(0deg,var(--c) 0 6px,var(--d) 6px 8px); box-shadow:0 4px 8px rgba(0,0,0,.4); transition:transform .12s; animation:pop .18s ease; }
+  .spool:active { transform:scale(.9); }
+  .spool .sym { background:rgba(255,255,255,.88); color:var(--d); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  @keyframes pop { from { transform:scale(.6); opacity:.4; } to { transform:scale(1); opacity:1; } }
+  #beltMore { position:relative; z-index:2; margin-left:auto; flex:0 0 auto; font-size:12px; color:#ffd98a; background:rgba(0,0,0,.45); padding:4px 6px; border-radius:8px; }
+  .stageLbl { font-size:12px; color:#ffd98a; letter-spacing:2px; margin-bottom:6px; }
+  #stage { display:flex; gap:7px; justify-content:space-between; }
+  .slot { flex:1; height:62px; border:2px dashed rgba(255,217,138,.4); border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.18); }
+  .slot .spool { width:36px; height:48px; cursor:default; }
+  .slot.full { border-style:solid; border-color:rgba(255,217,138,.65); }
+  #msg { text-align:center; min-height:24px; font-size:14px; color:#ffe9b8; margin-top:12px; }
+  .ov { position:fixed; inset:0; background:rgba(12,6,20,.78); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; }
+  .ov.hide { display:none; }
+  .card { background:linear-gradient(165deg,#3d1440,#5c1450); border:1px solid rgba(255,217,138,.45); border-radius:18px; padding:26px 22px; max-width:350px; width:100%; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .card h2 { font-size:26px; letter-spacing:3px; margin-bottom:10px; }
+  .card p { font-size:14px; line-height:1.75; color:#f5dfba; margin-bottom:14px; }
+  .card .best { font-size:13px; color:#ffd98a; margin-bottom:16px; }
+  .bigbtn { background:linear-gradient(180deg,#ffb347,#f08c1a); color:#431407; border:none; font-size:18px; font-weight:700; padding:13px 42px; border-radius:999px; cursor:pointer; box-shadow:0 6px 16px rgba(240,140,26,.45); letter-spacing:2px; }
+  .bigbtn:active { transform:scale(.96); }
+  .scoreLine { font-size:16px; margin:6px 0; }
+  .scoreLine b { color:#ffd98a; font-size:22px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a href="../index.html">← 大厅</a>
+    <h1>🧵 织锦坊</h1>
+    <button id="muteBtn" title="静音">🔊</button>
+  </header>
+
+  <div id="hud">
+    <div class="chip">关卡<b id="hLevel">1 / 6</b></div>
+    <div class="chip">分数<b id="hScore">0</b></div>
+    <div class="chip">待织线轴<b id="hLeft">0</b></div>
+    <div class="chip">已织纹样<b id="hWoven">0</b></div>
+  </div>
+
+  <div id="clothBox">
+    <div class="lbl">✦ 云锦纹样（织好的线会留在这里）</div>
+    <div id="cloth"></div>
+  </div>
+
+  <div class="beltLbl"><span>传送带 · 点线轴收下它</span><span>可见 9 个</span></div>
+  <div id="belt"><div id="beltRow"></div></div>
+
+  <div class="stageLbl">暂存织机位（满格 7 个还没凑够 3 个同色就输啦）</div>
+  <div id="stage"></div>
+
+  <div id="msg">点传送带上的线轴，把同色 3 个凑齐，自动织成云锦。</div>
+</div>
+
+<div class="ov" id="startOv">
+  <div class="card">
+    <h2>🧵 织锦坊</h2>
+    <p>传送带送来五颜六色的线轴，点一下就收进织机位。<br>同色凑满 <b>3 个</b>自动织走，在上方添一格云锦纹样。<br>织机位只有 7 格，塞满还没凑齐就输啦！</p>
+    <div class="best" id="startBest">最高分：0</div>
+    <button class="bigbtn" id="startBtn">开 始 织 锦</button>
+  </div>
+</div>
+
+<div class="ov hide" id="midOv">
+  <div class="card">
+    <h2 id="midTitle">🎉 本关织成！</h2>
+    <p id="midText"></p>
+    <button class="bigbtn" id="midBtn">下一关</button>
+  </div>
+</div>
+
+<div class="ov hide" id="endOv">
+  <div class="card">
+    <h2 id="endTitle">🏆 云锦大成！</h2>
+    <p class="scoreLine">本局得分 <b id="endScore">0</b></p>
+    <p class="scoreLine">最高分 <b id="endBest">0</b></p>
+    <p id="endText"></p>
+    <button class="bigbtn" id="againBtn">再 来 一 局</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 工具 ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(arr,rand){for(let i=arr.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));const t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function $(id){return document.getElementById(id);}
+
+/* ---------- 声音 ---------- */
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,v,delay){ if(muted)return; const c=ac(); if(!c)return; const t=c.currentTime+(delay||0);
+  const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(v||0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+(d||0.12));
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+(d||0.12)+0.03); }
+const sClick=()=>beep(700,0.06,'square',0.06);
+const sWeave=()=>{beep(523,0.1,'triangle',0.12);beep(659,0.1,'triangle',0.12,0.07);beep(784,0.16,'triangle',0.12,0.14);};
+const sBad=()=>{beep(180,0.2,'sawtooth',0.1);beep(120,0.25,'sawtooth',0.1,0.08);};
+const sWin=()=>{[523,659,784,1047].forEach((f,i)=>beep(f,0.16,'triangle',0.12,i*0.1));};
+$('muteBtn').onclick=()=>{ muted=!muted; $('muteBtn').textContent=muted?'🔇':'🔊'; if(!muted)sClick(); };
+
+/* ---------- 数据 ---------- */
+const COLORS=[
+  {c:'#ef476f',d:'#a4133c',s:'●'},
+  {c:'#f78c1f',d:'#a34d05',s:'▲'},
+  {c:'#ffd60a',d:'#9c7c02',s:'■'},
+  {c:'#2ec4b6',d:'#14756a',s:'◆'},
+  {c:'#3fa7ff',d:'#145da0',s:'★'},
+  {c:'#9b5de5',d:'#5a2d91',s:'♥'},
+  {c:'#7bd747',d:'#3d7a1c',s:'⬟'}
+];
+const LEVELS=[
+  {colors:4, per:6},
+  {colors:5, per:6},
+  {colors:5, per:9},
+  {colors:6, per:9},
+  {colors:6, per:12},
+  {colors:7, per:12}
+];
+const WIN=9, CAP=7;
+let level=0, score=0, queue=[], staging=[], woven=0, busy=false, ended=false;
+let best=0; try{ best=+localStorage.getItem('gh_zhijin_best')||0; }catch(e){}
+
+/* ---------- 关卡生成（贪心求解验证保底可解） ---------- */
+function weaveSim(st){
+  let changed=true;
+  while(changed){ changed=false; const cnt={};
+    for(const c of st) cnt[c]=(cnt[c]||0)+1;
+    for(const k in cnt){ if(cnt[k]>=3){ let n=3;
+      for(let i=st.length-1;i>=0&&n>0;i--){ if(st[i]==+k){ st.splice(i,1); n--; } }
+      changed=true; } } }
+}
+function solvable(q0){
+  const q=q0.slice(), st=[]; let guard=0;
+  while(guard++<800){
+    weaveSim(st);
+    if(q.length===0) return st.length===0;
+    if(st.length>=CAP) return false;
+    const win=q.slice(0,WIN), cntS={}, cntW={};
+    for(const c of st) cntS[c]=(cntS[c]||0)+1;
+    for(const c of win) cntW[c]=(cntW[c]||0)+1;
+    let pick=0, bs=-1e9;
+    for(let i=0;i<win.length;i++){ const sc=(cntS[win[i]]||0)*100+(cntW[win[i]]||0)*5-i*0.02; if(sc>bs){ bs=sc; pick=i; } }
+    st.push(win[pick]); q.splice(pick,1);
+  }
+  return false;
+}
+function genLevel(cfg, seed){
+  for(let att=0; att<60; att++){
+    const rand=mulberry32(seed*131+att*17+7);
+    const triples=[];
+    for(let c=0;c<cfg.colors;c++) for(let k=0;k<cfg.per/3;k++) triples.push(c);
+    shuffle(triples, rand);
+    let q=[];
+    for(const c of triples) q.push(c,c,c);
+    if(att<40){ /* 局部打散，难度来自交错 */
+      for(let i=0;i<q.length;i++){ const j=Math.min(q.length-1, i+Math.floor(rand()*6)); const t=q[i]; q[i]=q[j]; q[j]=t; }
+    }
+    if(solvable(q)) return q;
+  }
+  const q=[]; for(let c=0;c<cfg.colors;c++) for(let k=0;k<cfg.per;k++) q.push(c);
+  return q;
+}
+
+/* ---------- 渲染 ---------- */
+function spoolEl(c, small){
+  const d=document.createElement('div'); d.className='spool';
+  d.style.setProperty('--c', COLORS[c].c); d.style.setProperty('--d', COLORS[c].d);
+  if(small){ d.style.width='36px'; d.style.height='48px'; }
+  const s=document.createElement('span'); s.className='sym'; s.textContent=COLORS[c].s; d.appendChild(s);
+  return d;
+}
+function render(){
+  $('hLevel').textContent=(level+1)+' / '+LEVELS.length;
+  $('hScore').textContent=score;
+  $('hLeft').textContent=queue.length;
+  $('hWoven').textContent=woven;
+  const row=$('beltRow'); row.innerHTML='';
+  queue.slice(0,WIN).forEach((c,i)=>{ const el=spoolEl(c); el.onclick=()=>pick(i); row.appendChild(el); });
+  if(queue.length>WIN){ const m=document.createElement('div'); m.id='beltMore'; m.textContent='+'+(queue.length-WIN); row.appendChild(m); }
+  if(queue.length===0){ const m=document.createElement('div'); m.style.cssText='color:#8f8fa5;font-size:13px;padding-left:6px;'; m.textContent='（传送带空了）'; row.appendChild(m); }
+  const st=$('stage'); st.innerHTML='';
+  for(let i=0;i<CAP;i++){ const slot=document.createElement('div'); slot.className='slot'+(i<staging.length?' full':'');
+    if(i<staging.length) slot.appendChild(spoolEl(staging[i], true));
+    st.appendChild(slot); }
+}
+function addCloth(c){
+  const cloth=$('cloth');
+  for(let k=0;k<3;k++){ const cell=document.createElement('i'); cell.className='full'; cell.style.background='linear-gradient(180deg,'+COLORS[c].c+','+COLORS[c].d+')'; cloth.appendChild(cell); }
+  while(cloth.children.length>60) cloth.removeChild(cloth.firstChild);
+}
+
+/* ---------- 玩法 ---------- */
+function pick(i){
+  if(busy||ended) return;
+  const c=queue[i]; if(c===undefined) return;
+  queue.splice(i,1); staging.push(c); sClick(); render();
+  const cnt=staging.filter(x=>x===c).length;
+  if(cnt>=3){
+    busy=true;
+    setTimeout(()=>{
+      let n=3; for(let j=staging.length-1;j>=0&&n>0;j--){ if(staging[j]===c){ staging.splice(j,1); n--; } }
+      woven++; score+=30; addCloth(c); sWeave(); busy=false; render(); postMove();
+    },240);
+  } else postMove();
+}
+function postMove(){
+  if(queue.length===0 && staging.length===0){ levelClear(); return; }
+  if(staging.length>=CAP){ gameOver(false); return; }
+}
+function levelClear(){
+  score+=100+level*50; render();
+  if(level>=LEVELS.length-1){ gameOver(true); return; }
+  sWin();
+  $('midTitle').textContent='🎉 第 '+(level+1)+' 关织成！';
+  $('midText').textContent='云锦又长了一截。当前分数 '+score+'，下一关颜色更多、线轴更密。';
+  $('midOv').classList.remove('hide');
+}
+$('midBtn').onclick=()=>{ $('midOv').classList.add('hide'); level++; loadLevel(); sClick(); };
+function gameOver(won){
+  ended=true;
+  if(score>best){ best=score; try{ localStorage.setItem('gh_zhijin_best', best); }catch(e){} }
+  if(won) sWin(); else sBad();
+  $('endTitle').textContent=won?'🏆 云锦大成！':'🧶 织机位塞满啦';
+  $('endScore').textContent=score;
+  $('endBest').textContent=best;
+  $('endText').textContent=won?'六关全过，你织出的云锦可以开店啦！':'差一点点——先收已经出现两次的颜色，别贪新颜色。';
+  $('endOv').classList.remove('hide');
+}
+function loadLevel(){
+  queue=genLevel(LEVELS[level], 2026+level*31);
+  staging=[]; ended=false; busy=false;
+  $('cloth').innerHTML='';
+  for(let i=0;i<30;i++){ const cell=document.createElement('i'); $('cloth').appendChild(cell); }
+  woven=0;
+  $('msg').textContent='第 '+(level+1)+' 关：'+LEVELS[level].colors+' 种颜色，共 '+queue.length+' 个线轴。';
+  render();
+}
+function startGame(){ level=0; score=0; loadLevel(); }
+$('startBest').textContent='最高分：'+best;
+$('startBtn').onclick=()=>{ $('startOv').classList.add('hide'); sClick(); startGame(); };
+$('againBtn').onclick=()=>{ $('endOv').classList.add('hide'); sClick(); startGame(); };
+/* 初始布面占位 */
+(function(){ const cloth=$('cloth'); for(let i=0;i<30;i++){ cloth.appendChild(document.createElement('i')); } })();
+</script>
+</body>
+</html>

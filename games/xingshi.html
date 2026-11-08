@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>醒狮百人阵</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#1a0f0a;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#2b1206,#451a08 60%,#2b1206)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.35)}
+#topbar a{color:#ffd98a;text-decoration:none;font-size:15px}
+#topbar .t{font-weight:700;font-size:17px;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:16px;cursor:pointer}
+#hud{display:flex;justify-content:space-around;padding:8px 6px;background:rgba(0,0,0,.25);font-size:15px}
+#hud b{color:#ffd34d;font-size:19px}
+#cv{display:block;margin:0 auto;background:linear-gradient(180deg,#5a2410,#7a3214 55%,#5a2410);border-radius:10px;touch-action:none;width:94%}
+.bar{display:flex;gap:10px;justify-content:center;padding:10px}
+.bigbtn{background:linear-gradient(180deg,#ffb03a,#f07f13);border:none;color:#4a1c00;font-weight:800;font-size:18px;padding:12px 34px;border-radius:999px;cursor:pointer;box-shadow:0 4px 14px rgba(240,127,19,.5);letter-spacing:2px}
+.bigbtn:active{transform:scale(.96)}
+.ghostbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:15px;padding:10px 20px;border-radius:999px;cursor:pointer}
+#tip{text-align:center;font-size:14px;color:#ffd98a;min-height:22px;padding:2px 12px}
+.overlay{position:fixed;inset:0;background:rgba(10,4,2,.82);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{background:linear-gradient(160deg,#571f0c,#38130a);border:2px solid #b96a26;border-radius:18px;padding:28px 24px;max-width:400px;width:88%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h1{font-size:30px;letter-spacing:3px;margin-bottom:8px}
+.card .em{font-size:52px;margin:6px 0}
+.card p{color:#f3d9b0;font-size:15px;line-height:1.7;margin:6px 0}
+.card .best{color:#ffd34d;font-size:14px;margin-top:10px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><a href="../index.html">← 大厅</a><span class="t">🦁 醒狮百人阵</span><button id="muteBtn">🔊</button></div>
+  <div id="hud"><span>👥 狮队 <b id="hPeople">30</b> 人</span><span>🎏 第 <b id="hSeg">1</b>/3 段</span><span>⭐ <b id="hScore">0</b></span></div>
+  <canvas id="cv" width="440" height="600"></canvas>
+  <div id="tip">布阵阶段：点两道门可以互换左右位置</div>
+  <div class="bar"><button class="bigbtn hide" id="goBtn">🏃 出 发</button></div>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="em">🦁</div>
+    <h1>醒狮百人阵</h1>
+    <p>狮队自动前进，拖动或按 ← → 选门过阵：＋人、×倍增员，−人减员。<br>每段开跑前先「布阵」：点两道门互换左右，把好门换到你想走的一边！<br>跑完 3 段，关底对阵年兽 👹，人数够多才能赢。</p>
+    <button class="bigbtn" id="startBtn">开始挑战</button>
+    <div class="best">🏆 最高分：<span id="bestStart">0</span></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="em" id="endEm">🎉</div>
+    <h1 id="endTitle">凯旋！</h1>
+    <p id="endText"></p>
+    <p>本局得分 <b style="color:#ffd34d" id="endScore">0</b></p>
+    <div class="best">🏆 最高分：<span id="bestEnd">0</span></div>
+    <div style="margin-top:16px"><button class="bigbtn" id="againBtn">再来一局</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 音效 ---------- */
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,g,slideTo){ if(muted||!ac())return; const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+d); gn.gain.setValueAtTime(g||.15,t); gn.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t+d); }
+function sfx(n){ if(n==='click')beep(660,.06,'square',.08); else if(n==='good'){beep(523,.1,'triangle',.16);setTimeout(()=>beep(784,.14,'triangle',.16),70);} else if(n==='bad'){beep(220,.18,'sawtooth',.12,110);} else if(n==='swap'){beep(440,.07,'square',.1);setTimeout(()=>beep(587,.09,'square',.1),60);} else if(n==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle',.16),i*110));} else if(n==='hit'){beep(140,.12,'sawtooth',.18,60);} }
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; if(!muted)sfx('click'); });
+
+/* ---------- 游戏 ---------- */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const W=440,H=600, MID=225, TEAM_Y=500;
+const SLUG='xingshi';
+const best=()=>+(localStorage.getItem('gh_'+SLUG+'_best')||0);
+document.getElementById('bestStart').textContent=best();
+
+let people, segIdx, pairs, phase, selGate, score, runT, bossT, bossPower, shake, flashTxt, raf, lastTs, keys={};
+const EFFECTS=[{t:'+15',k:'add',v:15},{t:'+25',k:'add',v:25},{t:'+40',k:'add',v:40},{t:'×2',k:'mul',v:2},{t:'×1.5',k:'mul',v:1.5},{t:'-10',k:'add',v:-10},{t:'-25',k:'add',v:-25},{t:'-40',k:'add',v:-40}];
+let teamX=MID;
+
+function makePairs(n){
+  const out=[];
+  for(let i=0;i<n;i++){
+    let a=EFFECTS[Math.floor(Math.random()*EFFECTS.length)], b;
+    do{ b=EFFECTS[Math.floor(Math.random()*EFFECTS.length)]; }while(b===a);
+    out.push({L:a,R:b, y:-i*230-140, done:false});
+  }
+  return out;
+}
+function applyEff(e){
+  if(e.k==='add') people+=e.v; else people=Math.round(people*e.v);
+  if(people<0)people=0;
+  flashTxt={txt:e.t+' 人', col:(e.k==='mul'||e.v>0)?'#7dff8a':'#ff7d6b', t:1};
+  sfx((e.k==='mul'||e.v>0)?'good':'bad');
+  score+=Math.max(0, e.k==='mul'?40:e.v)+10;
+}
+function startGame(){
+  people=30; segIdx=0; score=0; teamX=MID;
+  document.getElementById('startOv').classList.add('hide');
+  document.getElementById('endOv').classList.add('hide');
+  startSegment();
+  if(raf)cancelAnimationFrame(raf);
+  lastTs=0; raf=requestAnimationFrame(loop);
+}
+function startSegment(){
+  pairs=makePairs(4); phase='plan'; selGate=null;
+  document.getElementById('goBtn').classList.remove('hide');
+  document.getElementById('tip').textContent='布阵：第 '+(segIdx+1)+' 段——点两道门互换左右，摆好点「出发」';
+  updHud();
+}
+function startRun(){
+  phase='run'; runT=0;
+  document.getElementById('goBtn').classList.add('hide');
+  document.getElementById('tip').textContent='拖动狮队或按 ← → 选门！';
+  sfx('click');
+}
+function startBoss(){
+  phase='boss'; bossT=0; bossPower=200+segIdx*30;
+  document.getElementById('tip').textContent='👹 年兽现身！狮队 '+people+' 人 vs 年兽战力 '+bossPower;
+  sfx('bad');
+}
+function endGame(win){
+  phase='over';
+  if(win) score+=500+people;
+  const b=best(); if(score>b)localStorage.setItem('gh_'+SLUG+'_best',score);
+  document.getElementById('endEm').textContent=win?'🏆':'😿';
+  document.getElementById('endTitle').textContent=win?'狮威凯旋！':'狮队尽力了';
+  document.getElementById('endText').textContent=win?('狮队以 '+people+' 人击退年兽，锣鼓喧天！'):('狮队剩 '+people+' 人，没能挡住年兽。再布一次阵试试！');
+  document.getElementById('endScore').textContent=score;
+  document.getElementById('bestEnd').textContent=best();
+  document.getElementById('endOv').classList.remove('hide');
+  sfx(win?'win':'bad');
+}
+function updHud(){
+  document.getElementById('hPeople').textContent=people;
+  document.getElementById('hSeg').textContent=Math.min(3,segIdx+1);
+  document.getElementById('hScore').textContent=score;
+}
+
+/* 输入 */
+function cvPos(e){ const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e; return {x:(p.clientX-r.left)*W/r.width, y:(p.clientY-r.top)*H/r.height}; }
+let dragging=false;
+cv.addEventListener('pointerdown',e=>{ const p=cvPos(e);
+  if(phase==='plan'){
+    for(let i=0;i<pairs.length;i++){ const pr=pairs[i];
+      const gy=90+i*118;
+      for(const side of ['L','R']){
+        const gx= side==='L'? 118:332;
+        if(Math.abs(p.x-gx)<78 && Math.abs(p.y-gy)<42){
+          if(!selGate){ selGate={i,side}; sfx('click'); }
+          else if(selGate.i===i && selGate.side!==side){ const tmp=pr.L; pr.L=pr.R; pr.R=tmp; selGate=null; sfx('swap'); }
+          else { selGate={i,side}; sfx('click'); }
+          return;
+        }
+      }
+    }
+  } else if(phase==='run'){ dragging=true; teamX=p.x; }
+});
+window.addEventListener('pointermove',e=>{ if(dragging&&phase==='run'){ teamX=cvPos(e).x; } });
+window.addEventListener('pointerup',()=>dragging=false);
+window.addEventListener('keydown',e=>{ keys[e.key]=true; if(e.key===' '){ if(phase==='plan')startRun(); } });
+window.addEventListener('keyup',e=>{ keys[e.key]=false; });
+document.getElementById('goBtn').addEventListener('click',()=>{ if(phase==='plan')startRun(); });
+document.getElementById('startBtn').addEventListener('click',()=>{ ac(); sfx('click'); startGame(); });
+document.getElementById('againBtn').addEventListener('click',()=>{ sfx('click'); startGame(); });
+
+/* 绘制 */
+function drawGate(gx,gy,eff,selected){
+  const w=150,h=76;
+  const good=(eff.k==='mul'||eff.v>0);
+  ctx.save();
+  ctx.fillStyle= good? 'rgba(46,160,80,.92)':'rgba(190,60,45,.92)';
+  ctx.strokeStyle= selected? '#ffe74d':'rgba(255,255,255,.65)';
+  ctx.lineWidth= selected?5:2;
+  roundRect(gx-w/2,gy-h/2,w,h,12); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='bold 30px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(eff.t+(eff.k==='add'?' 人':''), gx, gy);
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  /* 跑道 */
+  ctx.fillStyle='rgba(255,205,120,.14)';
+  for(let i=0;i<6;i++){ const y=((runT*60+i*120)%H); ctx.fillRect(30,y,6,54); ctx.fillRect(W-36,y,6,54); }
+  ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.setLineDash([12,14]); ctx.beginPath(); ctx.moveTo(MID,0); ctx.lineTo(MID,H); ctx.stroke(); ctx.setLineDash([]);
+  if(phase==='plan'){
+    ctx.fillStyle='#ffd98a'; ctx.font='bold 20px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('🧧 布阵图 · 第 '+(segIdx+1)+' 段', MID, 40);
+    pairs.forEach((pr,i)=>{ const gy=90+i*118;
+      drawGate(118,gy,pr.L, selGate&&selGate.i===i&&selGate.side==='L');
+      drawGate(332,gy,pr.R, selGate&&selGate.i===i&&selGate.side==='R');
+    });
+  } else if(phase==='run'||phase==='boss'||phase==='over'){
+    if(phase==='run') pairs.forEach(pr=>{ if(!pr.done||pr.y<H+60){ drawGate(118,pr.y,pr.L,false); drawGate(332,pr.y,pr.R,false); } });
+    if(phase==='boss'||phase==='over'){
+      const bx=MID+Math.sin(bossT*7)*8, by=130+Math.abs(Math.sin(bossT*3))*10;
+      ctx.font='110px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('👹',bx,by);
+      ctx.font='bold 20px sans-serif'; ctx.fillStyle='#ffb0a0';
+      ctx.fillText('年兽战力 '+bossPower, MID, 220);
+      if(bossT>1.2){ ctx.font='44px sans-serif'; ctx.fillText('💥',MID+(Math.random()*70-35),300+Math.random()*40); }
+    }
+    /* 狮队 */
+    const bob=Math.sin(runT*9)*4;
+    ctx.font='64px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🦁', teamX, TEAM_Y+bob);
+    const n=Math.min(people,36);
+    ctx.font='17px sans-serif';
+    for(let i=0;i<n;i++){ const col=i%9, row=(i/9)|0; ctx.fillText('🧑', teamX-72+col*18, TEAM_Y+48+row*20+bob*.4); }
+    ctx.font='bold 22px sans-serif'; ctx.fillStyle='#ffd34d';
+    ctx.fillText(people+' 人', teamX, TEAM_Y-56+bob);
+    if(flashTxt){ ctx.globalAlpha=Math.max(0,flashTxt.t); ctx.font='bold 34px sans-serif'; ctx.fillStyle=flashTxt.col; ctx.fillText(flashTxt.txt, MID, 300); ctx.globalAlpha=1; }
+  }
+}
+function loop(ts){
+  const dt=Math.min(.05,(ts-lastTs)/1000||0.016); lastTs=ts; runT+=dt;
+  if(phase==='run'){
+    if(keys['ArrowLeft'])teamX-=340*dt; if(keys['ArrowRight'])teamX+=340*dt;
+    teamX=Math.max(50,Math.min(W-50,teamX));
+    const spd=150+segIdx*25;
+    let allDone=true;
+    pairs.forEach(pr=>{ if(!pr.done){ pr.y+=spd*dt; allDone=false;
+      if(pr.y>=TEAM_Y-10){ pr.done=true; applyEff(teamX<MID?pr.L:pr.R); updHud(); if(people<=0){ draw(); endGame(false); } }
+    }});
+    if(allDone&&phase==='run'){ segIdx++; if(segIdx>=3){ startBoss(); } else { startSegment(); } }
+  } else if(phase==='boss'){
+    bossT+=dt;
+    if(bossT>0.4&&bossT<2.4&&Math.random()<.25)sfx('hit');
+    if(bossT>=2.6){ const win=people>=bossPower; if(win)people-=Math.floor(bossPower*.6); endGame(win); }
+  }
+  if(flashTxt){ flashTxt.t-=dt*1.4; if(flashTxt.t<=0)flashTxt=null; }
+  draw();
+  if(phase!=='over') raf=requestAnimationFrame(loop);
+}
+/* 初始画面 */
+people=30; segIdx=0; score=0; pairs=makePairs(4); phase='plan'; runT=0; flashTxt=null; selGate=null;
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>饕餮吞天 · 游戏大厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:linear-gradient(160deg,#12081f 0%,#1f0d33 55%,#2b1245 100%); min-height:100vh; color:#f2eaff; }
+  #app { max-width:480px; margin:0 auto; padding:10px 14px 26px; position:relative; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 2px 12px; }
+  .topbar a { color:#e9dcff; text-decoration:none; font-size:15px; background:rgba(255,255,255,.12); padding:6px 12px; border-radius:999px; }
+  .topbar .tname { font-size:17px; font-weight:700; letter-spacing:2px; }
+  #muteBtn { font-size:18px; background:rgba(255,255,255,.12); border:none; color:#fff; width:38px; height:38px; border-radius:50%; cursor:pointer; }
+  .hud { display:flex; gap:8px; margin-bottom:8px; }
+  .hud .cell { flex:1; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:6px 0; text-align:center; font-size:12px; color:#c9b3f5; }
+  .hud .cell b { display:block; font-size:16px; color:#fff; margin-top:1px; }
+  .hud .cell b.warn { color:#ff7a7a; }
+  #stomachBar { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:7px 12px; margin-bottom:10px; }
+  #stomachBar .lbl { font-size:12.5px; color:#c9b3f5; letter-spacing:1px; white-space:nowrap; }
+  .slot { width:40px; height:40px; border-radius:12px; border:2px dashed rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-size:22px; background:rgba(0,0,0,.25); }
+  .slot.full { border-style:solid; background:rgba(255,255,255,.1); }
+  #stomachTip { font-size:12px; color:#a98fdd; flex:1; text-align:right; }
+  #cvWrap { position:relative; border-radius:18px; overflow:hidden; box-shadow:0 14px 34px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.14); }
+  canvas { display:block; width:100%; height:auto; touch-action:none; background:radial-gradient(ellipse at 50% 42%, #3a1a5e 0%, #22103d 55%, #130826 100%); }
+  .overlay { position:fixed; inset:0; background:rgba(12,5,26,.85); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .overlay.hidden { display:none; }
+  .card { width:100%; max-width:400px; background:linear-gradient(165deg,#341a5e,#1e0f38); border:1px solid rgba(255,255,255,.18); border-radius:22px; padding:28px 24px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.55); }
+  .card .big { font-size:52px; }
+  .card h1 { font-size:26px; letter-spacing:4px; margin:8px 0 10px; }
+  .card p { font-size:14px; line-height:1.75; color:#dccfff; text-align:left; }
+  .card p.c { text-align:center; }
+  .card .best { margin-top:12px; font-size:13px; color:#ffd873; text-align:center; }
+  .card .bigbtn { margin-top:18px; width:100%; border:none; border-radius:16px; padding:15px 0; font-size:18px; font-weight:800; letter-spacing:3px; background:linear-gradient(180deg,#ffd873,#f5a623); color:#5b3400; cursor:pointer; box-shadow:0 8px 22px rgba(245,166,35,.4); }
+  .card .bigbtn:active { transform:scale(.97); }
+  .card .score { font-size:38px; font-weight:800; color:#ffd873; margin:6px 0; text-align:center; }
+  .toast { position:fixed; left:50%; top:15%; transform:translateX(-50%); background:rgba(20,10,40,.92); border:1px solid rgba(255,216,115,.6); color:#ffe9ad; padding:9px 18px; border-radius:999px; font-size:14px; z-index:60; opacity:0; pointer-events:none; transition:opacity .25s; white-space:nowrap; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <a href="../index.html">← 大厅</a>
+    <div class="tname">👹 饕餮吞天</div>
+    <button id="muteBtn" title="静音">🔊</button>
+  </div>
+
+  <div class="hud">
+    <div class="cell">关卡<b id="hudLevel">1 / 3</b></div>
+    <div class="cell">倒计时<b id="hudTime">60</b></div>
+    <div class="cell">本关目标<b id="hudTarget">800</b></div>
+    <div class="cell">得分<b id="hudScore">0</b></div>
+  </div>
+  <div id="stomachBar">
+    <span class="lbl">胃袋</span>
+    <div class="slot" id="slot0"></div>
+    <div class="slot" id="slot1"></div>
+    <div class="slot" id="slot2"></div>
+    <span id="stomachTip">凑 3 个同类才消化长大</span>
+  </div>
+
+  <div id="cvWrap"><canvas id="cv" width="440" height="600"></canvas></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="startScr">
+  <div class="card">
+    <div class="big">👹</div>
+    <h1>饕餮吞天</h1>
+    <p>· 按住拖动饕餮，吞掉比它小的食物（键盘方向键也能走）。<br>
+       · 吞下的先进三格胃袋，凑齐 <b>3 个同类</b>（水果／肉食／甜点／蔬菜）才消化，饕餮长大一圈。<br>
+       · 胃袋装满又凑不成套，会吐掉最早吞下的那个。<br>
+       · 限时内达到目标分过关，一共 3 关，越往后胃口越大。</p>
+    <div class="best" id="startBest">最高分：0</div>
+    <button class="bigbtn" id="startBtn">开 始 吞 天</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="endScr">
+  <div class="card">
+    <div class="big" id="endEmoji">🏆</div>
+    <h1 id="endTitle">吞天成功！</h1>
+    <p class="c" id="endDesc">三关全过，饕餮吃成了庞然大物。</p>
+    <div class="score" id="endScore">0</div>
+    <div class="best" id="endBest">最高分：0</div>
+    <button class="bigbtn" id="againBtn">再 来 一 局</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- 极简合成音效 ---------- */
+let AC = null, muted = false;
+function beep(f, d, type, v, delay) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === "suspended") AC.resume();
+    const t = AC.currentTime + (delay || 0);
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(v || 0.14, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (d || 0.09));
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + (d || 0.09) + 0.03);
+  } catch (e) {}
+}
+const sfx = {
+  click:  () => beep(600, 0.06, "sine", 0.10),
+  gulp:   () => { beep(300, 0.08, "sine", 0.16); beep(180, 0.1, "sine", 0.14, 0.05); },
+  digest: () => { [440, 554, 659, 880].forEach((f, i) => beep(f, 0.14, "triangle", 0.13, i * 0.06)); },
+  spit:   () => beep(500, 0.12, "sawtooth", 0.08),
+  clear:  () => { [523, 659, 784, 1047, 1319].forEach((f, i) => beep(f, 0.16, "triangle", 0.12, i * 0.08)); },
+  fail:   () => { beep(220, 0.25, "sawtooth", 0.10); beep(160, 0.3, "sawtooth", 0.10, 0.15); }
+};
+document.getElementById("muteBtn").addEventListener("click", function () {
+  muted = !muted;
+  this.textContent = muted ? "🔇" : "🔊";
+  if (!muted) sfx.click();
+});
+
+/* ---------- 饕餮图（失败用 emoji 兜底） ---------- */
+const taoImg = new Image();
+let taoOK = false;
+taoImg.onload = () => { taoOK = true; };
+taoImg.onerror = () => { taoOK = false; };
+taoImg.src = "../assets/taotie.png";
+
+/* ---------- 游戏状态 ---------- */
+const W = 440, H = 600;
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const CATS = [
+  { key: "fruit", name: "水果", color: "#ff5a76", items: ["🍎", "🍇", "🍓", "🍑", "🍉", "🍊"] },
+  { key: "meat",  name: "肉食", color: "#e08a3c", items: ["🍗", "🍖", "🍔", "🌭", "🍤"] },
+  { key: "sweet", name: "甜点", color: "#ff8ad4", items: ["🍩", "🍰", "🍦", "🍭", "🍮"] },
+  { key: "veg",   name: "蔬菜", color: "#63c74d", items: ["🥦", "🥕", "🌽", "🍄", "🥬"] }
+];
+const LEVELS = [
+  { time: 60, target: 800 },
+  { time: 60, target: 1500 },
+  { time: 75, target: 2400 }
+];
+const BEST_KEY = "gh_taotie_best";
+const $ = id => document.getElementById(id);
+
+let playing = false, level = 0, totalScore = 0, levelScore = 0;
+let timeLeft = 0, lastTs = 0, spawnT = 0;
+let player, foods, stomach, parts, dust;
+const keys = {};
+let pointer = null;
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1500);
+}
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+function newFood(away) {
+  const cat = CATS[Math.floor(Math.random() * CATS.length)];
+  const roll = Math.random();
+  const r = roll < 0.55 ? rnd(10, 16) : roll < 0.85 ? rnd(17, 24) : rnd(26, 36);
+  let x, y, tries = 0;
+  do { x = rnd(30, W - 30); y = rnd(30, H - 30); tries++; }
+  while (away && player && Math.hypot(x - player.x, y - player.y) < 110 && tries < 12);
+  return { x, y, r, cat: cat.key, color: cat.color, emoji: cat.items[Math.floor(Math.random() * cat.items.length)],
+           vx: rnd(-14, 14), vy: rnd(-14, 14), ph: rnd(0, 6.28) };
+}
+function resetLevel(li) {
+  const cfg = LEVELS[li];
+  timeLeft = cfg.time;
+  levelScore = 0;
+  player = { x: W / 2, y: H / 2 + 60, r: 26 + li * 3, tx: W / 2, ty: H / 2 + 60, face: 1 };
+  foods = []; stomach = []; parts = [];
+  for (let i = 0; i < 13; i++) foods.push(newFood(true));
+  spawnT = 0;
+  updateHUD();
+}
+function updateHUD() {
+  $("hudLevel").textContent = (level + 1) + " / " + LEVELS.length;
+  const t = Math.max(0, Math.ceil(timeLeft));
+  $("hudTime").textContent = t;
+  $("hudTime").className = t <= 10 ? "warn" : "";
+  $("hudTarget").textContent = LEVELS[level].target;
+  $("hudScore").textContent = totalScore;
+  for (let i = 0; i < 3; i++) {
+    const s = $("slot" + i);
+    if (stomach[i]) {
+      s.textContent = stomach[i].emoji;
+      s.className = "slot full";
+      s.style.borderColor = stomach[i].color;
+    } else {
+      s.textContent = ""; s.className = "slot"; s.style.borderColor = "";
+    }
+  }
+}
+
+/* ---------- 吞食与胃袋 ---------- */
+function burst(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rnd(0, 6.28), sp = rnd(30, 120);
+    parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rnd(0.35, 0.7), t: 0, color, r: rnd(2, 4.5) });
+  }
+}
+function swallow(f) {
+  foods.splice(foods.indexOf(f), 1);
+  totalScore += 20; levelScore += 20;
+  burst(f.x, f.y, f.color, 5);
+  sfx.gulp();
+  if (stomach.length >= 3) {
+    const out = stomach.shift();
+    const back = newFood(false);
+    back.x = Math.min(W - 26, Math.max(26, player.x + rnd(-70, 70)));
+    back.y = Math.min(H - 26, Math.max(26, player.y + rnd(-70, 70)));
+    back.emoji = out.emoji; back.cat = out.cat; back.color = out.color; back.r = Math.max(11, f.r - 2);
+    foods.push(back);
+    sfx.spit();
+    toast("胃袋满了，吐出一个" + out.emoji);
+  }
+  stomach.push({ cat: f.cat, emoji: f.emoji, color: f.color });
+  if (stomach.length === 3 && stomach.every(s => s.cat === stomach[0].cat)) {
+    const catName = CATS.find(c => c.key === stomach[0].cat).name;
+    stomach = [];
+    player.r = Math.min(62, player.r + 5);
+    totalScore += 180; levelScore += 180;
+    burst(player.x, player.y, "#ffd873", 22);
+    sfx.digest();
+    toast("消化了 3 个" + catName + "！长大一圈 +180");
+  }
+  updateHUD();
+}
+
+/* ---------- 主循环 ---------- */
+function step(ts) {
+  if (!playing) return;
+  const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
+  lastTs = ts;
+  timeLeft -= dt;
+  if (timeLeft <= 0) { judgeLevel(); return; }
+  // 移动：键盘优先，其次指针目标
+  const spd = 265;
+  let kx = 0, ky = 0;
+  if (keys.ArrowLeft || keys.a) kx = -1;
+  if (keys.ArrowRight || keys.d) kx = 1;
+  if (keys.ArrowUp || keys.w) ky = -1;
+  if (keys.ArrowDown || keys.s) ky = 1;
+  if (kx || ky) {
+    player.x += kx * spd * dt; player.y += ky * spd * dt;
+    player.tx = player.x; player.ty = player.y;
+    if (kx) player.face = kx;
+  } else if (pointer) {
+    const dx = pointer.x - player.x, dy = pointer.y - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 4) {
+      const v = Math.min(spd, d * 9);
+      player.x += dx / d * v * dt; player.y += dy / d * v * dt;
+      if (Math.abs(dx) > 6) player.face = dx > 0 ? 1 : -1;
+    }
+  }
+  player.x = Math.min(W - player.r * 0.6, Math.max(player.r * 0.6, player.x));
+  player.y = Math.min(H - player.r * 0.6, Math.max(player.r * 0.6, player.y));
+  // 食物漂移
+  for (const f of foods) {
+    f.x += f.vx * dt; f.y += f.vy * dt; f.ph += dt * 2;
+    if (f.x < f.r || f.x > W - f.r) f.vx *= -1;
+    if (f.y < f.r || f.y > H - f.r) f.vy *= -1;
+    f.x = Math.min(W - f.r, Math.max(f.r, f.x));
+    f.y = Math.min(H - f.r, Math.max(f.r, f.y));
+  }
+  // 吞食判定
+  for (let i = foods.length - 1; i >= 0; i--) {
+    const f = foods[i];
+    if (f.r < player.r * 0.95 && Math.hypot(f.x - player.x, f.y - player.y) < player.r + f.r * 0.35) swallow(f);
+  }
+  // 补食
+  spawnT -= dt;
+  if (spawnT <= 0 && foods.length < 15) { foods.push(newFood(true)); spawnT = 0.7; }
+  // 粒子
+  parts = parts.filter(p => (p.t += dt) < p.life);
+  for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy *= 0.94; }
+  draw(ts / 1000);
+  if (Math.ceil(timeLeft) !== step._lt) { step._lt = Math.ceil(timeLeft); updateHUD(); }
+  requestAnimationFrame(step);
+}
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+  // 尘埃
+  ctx.fillStyle = "rgba(255,255,255,.35)";
+  for (let i = 0; i < 22; i++) {
+    const dx = (i * 89 + Math.sin(t * 0.4 + i) * 8) % W, dy = (i * 137 + t * 9 * (1 + i % 3 * 0.3)) % H;
+    ctx.globalAlpha = 0.12 + (i % 4) * 0.05;
+    ctx.beginPath(); ctx.arc(dx, dy, 1.6, 0, 6.29); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // 食物
+  for (const f of foods) {
+    const bob = Math.sin(f.ph) * 2.5;
+    const edible = f.r < player.r * 0.95;
+    ctx.save();
+    ctx.globalAlpha = edible ? 1 : 0.55;
+    ctx.beginPath(); ctx.arc(f.x, f.y + bob, f.r + 3, 0, 6.29);
+    ctx.fillStyle = f.color + "2e"; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = f.color + "88"; ctx.stroke();
+    ctx.font = (f.r * 1.75) + "px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(f.emoji, f.x, f.y + bob + 1);
+    ctx.restore();
+  }
+  // 饕餮
+  const pr = player.r;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(player.x, player.y, pr * 1.12, 0, 6.29);
+  ctx.fillStyle = "rgba(255,120,60,.14)"; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,170,80,.5)"; ctx.stroke();
+  const breathe = 1 + Math.sin(t * 3) * 0.03;
+  if (taoOK) {
+    const s = pr * 2.7 * breathe;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.scale(player.face * 1, 1);
+    ctx.drawImage(taoImg, -s / 2, -s / 2, s, s);
+    ctx.restore();
+  } else {
+    ctx.font = (pr * 2.1 * breathe) + "px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("👹", player.x, player.y + 2);
+  }
+  ctx.restore();
+  // 粒子
+  for (const p of parts) {
+    ctx.globalAlpha = 1 - p.t / p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.29); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // 顶部本关进度
+  const pct = Math.min(1, levelScore / LEVELS[level].target);
+  ctx.fillStyle = "rgba(255,255,255,.16)"; ctx.fillRect(14, 12, W - 28, 9);
+  ctx.fillStyle = "#ffd873"; ctx.fillRect(14, 12, (W - 28) * pct, 9);
+  ctx.font = "11px sans-serif"; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.textAlign = "left";
+  ctx.fillText("本关 " + levelScore + " / " + LEVELS[level].target, 14, 36);
+}
+
+function judgeLevel() {
+  if (levelScore >= LEVELS[level].target) {
+    const bonus = Math.round(Math.max(0, timeLeft)) * 10;
+    totalScore += bonus;
+    if (level >= LEVELS.length - 1) { endGame(true); return; }
+    sfx.clear();
+    toast("过关！时间奖励 +" + bonus + "，进入第 " + (level + 2) + " 关");
+    level++;
+    resetLevel(level);
+    lastTs = performance.now();
+    requestAnimationFrame(step);
+  } else {
+    endGame(false);
+  }
+}
+
+function endGame(won) {
+  playing = false;
+  const best = Math.max(totalScore, +(localStorage.getItem(BEST_KEY) || 0));
+  localStorage.setItem(BEST_KEY, best);
+  if (won) sfx.clear(); else sfx.fail();
+  $("endEmoji").textContent = won ? "🏆" : "😵";
+  $("endTitle").textContent = won ? "吞天成功！" : "没吃饱……";
+  $("endDesc").textContent = won ? "三关全过，饕餮吃成了庞然大物。" :
+    ("倒在第 " + (level + 1) + " 关：本关 " + levelScore + " / " + LEVELS[level].target + " 分。凑齐 3 个同类消化最涨分。");
+  $("endScore").textContent = totalScore;
+  $("endBest").textContent = "最高分：" + best;
+  $("endScr").classList.remove("hidden");
+}
+
+function startGame() {
+  level = 0; totalScore = 0;
+  $("startScr").classList.add("hidden");
+  $("endScr").classList.add("hidden");
+  resetLevel(0);
+  playing = true;
+  lastTs = performance.now();
+  step._lt = -1;
+  requestAnimationFrame(step);
+  sfx.click();
+}
+
+/* ---------- 输入 ---------- */
+function toGame(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+}
+cv.addEventListener("pointerdown", e => { pointer = toGame(e); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => { if (pointer) pointer = toGame(e); });
+cv.addEventListener("pointerup", () => { pointer = null; });
+cv.addEventListener("pointercancel", () => { pointer = null; });
+window.addEventListener("keydown", e => {
+  keys[e.key] = true; keys[e.key.toLowerCase()] = true;
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(e.key)) e.preventDefault();
+});
+window.addEventListener("keyup", e => { keys[e.key] = false; keys[e.key.toLowerCase()] = false; });
+
+$("startBtn").addEventListener("click", startGame);
+$("againBtn").addEventListener("click", startGame);
+$("startBest").textContent = "最高分：" + (localStorage.getItem(BEST_KEY) || 0);
+/* 静态首帧（开始前也能看到饕餮在场） */
+player = { x: W / 2, y: H / 2 + 40, r: 30, tx: W / 2, ty: H / 2, face: 1 };
+foods = []; stomach = []; parts = [];
+for (let i = 0; i < 10; i++) foods.push(newFood(true));
+levelScore = 0; updateHUD();
+(function idle() { if (!playing) { draw(performance.now() / 1000); requestAnimationFrame(idle); } })();
+</script>
+</body>
+</html>

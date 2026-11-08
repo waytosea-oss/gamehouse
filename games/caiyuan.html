@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>小小菜园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0e1a0c;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#1d3312,#14240c)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.35)}
+#topbar a{color:#b7f09a;text-decoration:none;font-size:15px}
+#topbar .t{font-weight:700;font-size:17px;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:16px;cursor:pointer}
+#term{text-align:center;padding:9px 10px;background:linear-gradient(90deg,rgba(87,184,76,.25),rgba(255,176,58,.25));font-size:15px}
+#term b{color:#ffd34d;font-size:17px}
+#hud{display:flex;justify-content:space-around;padding:8px 4px;background:rgba(0,0,0,.25);font-size:14px}
+#hud b{color:#ffd34d}
+.sec{padding:8px 12px 2px;font-size:13px;color:#b9d9a0;letter-spacing:1px}
+#shop{display:flex;gap:7px;padding:6px 12px;flex-wrap:wrap}
+.seed{background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.18);color:#fff;border-radius:12px;padding:7px 9px;font-size:14px;cursor:pointer;text-align:center;line-height:1.35}
+.seed small{display:block;font-size:11px;color:#cfe6bb}
+.seed.sel{border-color:#ffd34d;background:rgba(255,211,77,.18)}
+.seed .tag{color:#ffb03a;font-weight:700;font-size:11px}
+#field{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px}
+.plot{aspect-ratio:1;background:linear-gradient(160deg,#6b4a26,#54381c);border:2px solid #7d5a30;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;box-shadow:inset 0 3px 6px rgba(0,0,0,.4)}
+.plot .em{font-size:32px}
+.plot .st{font-size:10px;color:#ffe2ae;margin-top:2px;text-align:center;line-height:1.3}
+.plot .pg{position:absolute;left:8px;right:8px;bottom:6px;height:5px;background:rgba(0,0,0,.45);border-radius:3px;overflow:hidden}
+.plot .pg i{display:block;height:100%;background:#7ddc4f}
+.plot.ready{border-color:#ffd34d;animation:pulse 1.1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(255,211,77,.28)}}
+.plot.dry{border-color:#5aa2ff}
+#expand{padding:2px 12px 14px;display:flex;gap:8px}
+.xbtn{flex:1;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;padding:9px;font-size:14px;cursor:pointer}
+#tip{text-align:center;font-size:13px;color:#b9d9a0;min-height:20px;padding:0 12px 10px}
+.overlay{position:fixed;inset:0;background:rgba(6,12,4,.86);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{background:linear-gradient(160deg,#2c4d1c,#18290e);border:2px solid #5f9440;border-radius:18px;padding:26px 22px;max-width:400px;width:88%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h1{font-size:29px;letter-spacing:3px;margin-bottom:8px}
+.card .em{font-size:50px;margin:4px 0}
+.card p{color:#dff0cd;font-size:15px;line-height:1.7;margin:6px 0}
+.card .best{color:#ffd34d;font-size:14px;margin-top:10px}
+.bigbtn{background:linear-gradient(180deg,#8edd55,#4da72c);border:none;color:#122b06;font-weight:800;font-size:18px;padding:12px 32px;border-radius:999px;cursor:pointer;box-shadow:0 4px 14px rgba(77,167,44,.5);letter-spacing:1px}
+.bigbtn:active{transform:scale(.96)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><a href="../index.html">← 大厅</a><span class="t">🌱 小小菜园</span><button id="muteBtn">🔊</button></div>
+  <div id="term">正在推算节气…</div>
+  <div id="hud"><span>💰 金币 <b id="hCoin">0</b></span><span>🧾 累计收入 <b id="hEarn">0</b></span><span>🏆 最高 <b id="hBest">0</b></span></div>
+  <div class="sec">🌰 选种子（当季作物：卖价 ×1.5、长得快）</div>
+  <div id="shop"></div>
+  <div class="sec">🌾 菜地（点空地播种 → 点秧苗浇水 → 成熟点收）</div>
+  <div id="field"></div>
+  <div id="expand">
+    <button class="xbtn" id="exp12">🗺️ 扩地到 12 块 · ¥150</button>
+    <button class="xbtn" id="exp16">🗺️ 扩地到 16 块 · ¥400</button>
+  </div>
+  <div id="tip"></div>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="em">🌱</div>
+    <h1>小小菜园</h1>
+    <p>选种子、点空地播种，再点秧苗浇水，等它长大点收卖钱。<br>菜园跟着真实日期的<b>二十四节气</b>走：种当季菜，卖价 ×1.5 还长得快。<br>关掉页面也不怕，回来时成熟的菜会自动卖掉（离线收益最多算 8 小时）。</p>
+    <button class="bigbtn" id="startBtn">开始种菜</button>
+    <div class="best">🏆 历史最高累计收入：<span id="bestStart">0</span></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="em">🎉</div>
+    <h1 id="endTitle">丰收大户！</h1>
+    <p id="endText"></p>
+    <p>累计收入 <b style="color:#ffd34d" id="endScore">0</b></p>
+    <div class="best">🏆 最高累计收入：<span id="bestEnd">0</span></div>
+    <div style="margin-top:16px"><button class="bigbtn" id="againBtn">继续经营</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,g,slideTo){ if(muted||!ac())return; const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+d); gn.gain.setValueAtTime(g||.12,t); gn.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t+d); }
+function sfx(n){ if(n==='click')beep(620,.05,'square',.07); else if(n==='plant')beep(392,.09,'triangle',.12,523); else if(n==='water'){beep(880,.12,'sine',.09,440);} else if(n==='cash'){beep(1047,.07,'square',.09);setTimeout(()=>beep(1568,.13,'square',.09),60);} else if(n==='bad')beep(200,.15,'sawtooth',.1,120); }
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; });
+
+const SLUG='caiyuan';
+const best=()=>+(localStorage.getItem('gh_'+SLUG+'_best')||0);
+/* 二十四节气（近似日期） */
+const TERMS=[[1,5,'小寒'],[1,20,'大寒'],[2,4,'立春'],[2,19,'雨水'],[3,5,'惊蛰'],[3,20,'春分'],[4,5,'清明'],[4,20,'谷雨'],[5,5,'立夏'],[5,21,'小满'],[6,5,'芒种'],[6,21,'夏至'],[7,7,'小暑'],[7,22,'大暑'],[8,7,'立秋'],[8,23,'处暑'],[9,7,'白露'],[9,23,'秋分'],[10,8,'寒露'],[10,23,'霜降'],[11,7,'立冬'],[11,22,'小雪'],[12,7,'大雪'],[12,21,'冬至']];
+function curTerm(d){
+  d=d||new Date(); const m=d.getMonth()+1, day=d.getDate();
+  let cur=TERMS[TERMS.length-1];
+  for(const t of TERMS){ if(m>t[0]||(m===t[0]&&day>=t[1])) cur=t; }
+  return cur[2];
+}
+function seasonOf(term){
+  const spring=['立春','雨水','惊蛰','春分','清明','谷雨'], summer=['立夏','小满','芒种','夏至','小暑','大暑'], autumn=['立秋','处暑','白露','秋分','寒露','霜降'];
+  if(spring.includes(term))return '春'; if(summer.includes(term))return '夏'; if(autumn.includes(term))return '秋'; return '冬';
+}
+const TERM=curTerm(), SEASON=seasonOf(TERM);
+document.getElementById('term').innerHTML='📅 今日节气 <b>'+TERM+'</b> · '+SEASON+'季当季，种'+SEASON+'季菜有加成';
+
+const CROPS=[
+ {id:'wandou', em:'🫛', name:'豌豆', cost:9, sell:22, grow:30, season:'春'},
+ {id:'baicai', em:'🥬', name:'白菜', cost:5, sell:12, grow:20, season:'秋'},
+ {id:'luobo', em:'🥕', name:'萝卜', cost:8, sell:20, grow:35, season:'冬'},
+ {id:'huanggua', em:'🥒', name:'黄瓜', cost:10, sell:24, grow:40, season:'夏'},
+ {id:'fanqie', em:'🍅', name:'番茄', cost:12, sell:30, grow:50, season:'夏'},
+ {id:'nangua', em:'🎃', name:'南瓜', cost:16, sell:44, grow:80, season:'秋'},
+ {id:'caomei', em:'🍓', name:'草莓', cost:20, sell:58, grow:100, season:'春'},
+ {id:'xigua', em:'🍉', name:'西瓜', cost:22, sell:65, grow:110, season:'夏'}
+];
+const cropById=id=>CROPS.find(c=>c.id===id);
+const inSeason=c=>c.season===SEASON;
+const sellPrice=c=>Math.round(c.sell*(inSeason(c)?1.5:1));
+const growMs=c=>Math.round(c.grow*1000*(inSeason(c)?0.75:1));
+
+let S; /* state */
+function defaultState(){ return {coins:30, totalEarned:0, plotCount:9, plots:{}, sel:'baicai', lastSeen:Date.now(), milestone:false}; }
+function save(){ S.lastSeen=Date.now(); try{ localStorage.setItem('gh_'+SLUG+'_state', JSON.stringify(S)); }catch(e){} }
+function load(){
+  try{ const raw=localStorage.getItem('gh_'+SLUG+'_state'); if(raw){ S=Object.assign(defaultState(), JSON.parse(raw)); return true; } }catch(e){}
+  S=defaultState(); return false;
+}
+function plotReady(p){ return p && p.stage==='grow' && Date.now()-p.waterStart>=p.growMs; }
+function offlineSettle(){
+  const now=Date.now(); const cap=S.lastSeen+8*3600*1000; const until=Math.min(now,cap);
+  let gained=0, cnt=0;
+  for(const k of Object.keys(S.plots)){ const p=S.plots[k];
+    if(p&&p.stage==='grow'&&p.waterStart+p.growMs<=until){ gained+=sellPrice(cropById(p.crop)); cnt++; delete S.plots[k]; } }
+  if(cnt>0){ S.coins+=gained; S.totalEarned+=gained;
+    document.getElementById('tip').textContent='🌙 你不在时，'+cnt+' 株作物成熟自动出售，离线收益 +¥'+gained; }
+  return cnt;
+}
+function checkBest(){ if(S.totalEarned>best())localStorage.setItem('gh_'+SLUG+'_best',S.totalEarned); }
+function clickPlot(i){
+  const p=S.plots[i];
+  if(!p){
+    const c=cropById(S.sel);
+    if(S.coins<c.cost){ sfx('bad'); document.getElementById('tip').textContent='💸 金币不够，先收点菜卖钱吧'; return; }
+    S.coins-=c.cost; S.plots[i]={crop:c.id, stage:'seed'}; sfx('plant');
+    document.getElementById('tip').textContent=c.em+' '+c.name+'种下了，点它浇水💧';
+  } else if(p.stage==='seed'){
+    const c=cropById(p.crop);
+    p.stage='grow'; p.waterStart=Date.now(); p.growMs=growMs(c); sfx('water');
+    document.getElementById('tip').textContent=c.name+'开始生长，约 '+Math.round(p.growMs/1000)+' 秒成熟';
+  } else if(plotReady(p)){
+    const c=cropById(p.crop); const gain=sellPrice(c);
+    S.coins+=gain; S.totalEarned+=gain; delete S.plots[i]; sfx('cash'); checkBest();
+    document.getElementById('tip').textContent='🧺 收获 '+c.name+' +¥'+gain+(inSeason(c)?'（当季加成！）':'');
+    if(S.totalEarned>=1000&&!S.milestone){ S.milestone=true; showWin(); }
+  } else {
+    const left=Math.ceil((p.waterStart+p.growMs-Date.now())/1000);
+    document.getElementById('tip').textContent='⏳ '+cropById(p.crop).name+'还要 '+left+' 秒成熟';
+    sfx('click');
+  }
+  save(); render();
+}
+function showWin(){
+  document.getElementById('endText').textContent='你的菜园累计收入突破 ¥1000，从自给自足到小有名气的菜场供应商啦！';
+  document.getElementById('endScore').textContent=S.totalEarned;
+  document.getElementById('bestEnd').textContent=best();
+  document.getElementById('endOv').classList.remove('hide');
+  sfx('cash');
+}
+function expand(n,cost){
+  if(S.plotCount>=n){ sfx('bad'); return; }
+  if(S.coins<cost){ sfx('bad'); document.getElementById('tip').textContent='💸 扩地要 ¥'+cost+'，金币不够'; return; }
+  S.coins-=cost; S.plotCount=n; sfx('cash'); document.getElementById('tip').textContent='🗺️ 菜地扩到 '+n+' 块！'; save(); render();
+}
+function render(){
+  document.getElementById('hCoin').textContent=S.coins;
+  document.getElementById('hEarn').textContent=S.totalEarned;
+  document.getElementById('hBest').textContent=best();
+  const shop=document.getElementById('shop'); shop.innerHTML='';
+  CROPS.forEach(c=>{ const b=document.createElement('button'); b.className='seed'+(S.sel===c.id?' sel':'');
+    b.innerHTML=c.em+' '+c.name+(inSeason(c)?' <span class="tag">当季</span>':'')+'<small>种 ¥'+c.cost+' · 卖 ¥'+sellPrice(c)+' · '+Math.round(growMs(c)/1000)+'秒</small>';
+    b.addEventListener('click',()=>{ S.sel=c.id; sfx('click'); save(); render(); });
+    shop.appendChild(b); });
+  const f=document.getElementById('field'); f.innerHTML='';
+  for(let i=0;i<S.plotCount;i++){ const p=S.plots[i]; const d=document.createElement('div');
+    if(!p){ d.className='plot'; d.innerHTML='<div class="em" style="opacity:.35">➕</div><div class="st">空地</div>'; }
+    else if(p.stage==='seed'){ const c=cropById(p.crop); d.className='plot dry'; d.innerHTML='<div class="em">🌱</div><div class="st">'+c.name+'<br>点我浇水💧</div>'; }
+    else { const c=cropById(p.crop); const pr=Math.min(1,(Date.now()-p.waterStart)/p.growMs); const ready=pr>=1;
+      d.className='plot'+(ready?' ready':'');
+      const em=ready?c.em:(pr<.4?'🌿':(pr<.75?'🪴':'🌾'));
+      d.innerHTML='<div class="em">'+em+'</div><div class="st">'+c.name+(ready?'<br>点我收获✨':'<br>'+Math.ceil((1-pr)*p.growMs/1000)+'秒')+'</div><div class="pg"><i style="width:'+(pr*100)+'%"></i></div>'; }
+    const idx=i; d.addEventListener('click',()=>clickPlot(idx));
+    f.appendChild(d); }
+  document.getElementById('exp12').style.opacity=S.plotCount>=12?.45:1;
+  document.getElementById('exp16').style.opacity=S.plotCount>=16?.45:1;
+}
+/* 初始化：先算离线，再渲染 */
+const had=load();
+if(had)offlineSettle();
+checkBest(); save();
+document.getElementById('bestStart').textContent=best();
+render();
+setInterval(()=>{ save(); render(); },1000);
+document.getElementById('exp12').addEventListener('click',()=>expand(12,150));
+document.getElementById('exp16').addEventListener('click',()=>expand(16,400));
+document.getElementById('startBtn').addEventListener('click',()=>{ ac(); sfx('click'); document.getElementById('startOv').classList.add('hide'); });
+document.getElementById('againBtn').addEventListener('click',()=>{ sfx('click'); document.getElementById('endOv').classList.add('hide'); });
+</script>
+</body>
+</html>

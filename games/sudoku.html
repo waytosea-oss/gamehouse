@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>数独小馆 · 游戏大厅</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#1d1710;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#f5e9d2}
+body{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#app{max-width:480px;margin:0 auto;min-height:100vh;background:linear-gradient(180deg,#2b2013,#3a2a16 55%,#241a0e);display:flex;flex-direction:column;position:relative;overflow:hidden}
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.28)}
+#topbar a{color:#f0c883;text-decoration:none;font-size:15px;font-weight:600}
+#topbar .tname{flex:1;text-align:center;font-size:17px;font-weight:700;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;font-size:17px;padding:4px 10px;cursor:pointer}
+#hud{display:flex;gap:8px;padding:10px 14px 4px}
+.hbox{flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(240,200,131,.35);border-radius:12px;padding:6px 4px;text-align:center}
+.hbox .lab{font-size:11px;color:#f0c883;letter-spacing:1px}
+.hbox .val{font-size:17px;font-weight:800;color:#fdf3d8}
+#hintBar{min-height:40px;font-size:12.5px;line-height:1.55;color:#ffe1a6;padding:6px 16px;text-align:center}
+#boardWrap{padding:2px 14px}
+#board{display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:#6d4c2f;border:3px solid #6d4c2f;border-radius:10px;overflow:hidden}
+.cell{aspect-ratio:1/1;background:#fdf6e0;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:600;color:#33691e;cursor:pointer;position:relative}
+.cell.br{border-right:3px solid #6d4c2f}.cell.bb{border-bottom:3px solid #6d4c2f}
+.cell.given{color:#4e342e;font-weight:800;background:#f3e5c3}
+.cell.peer{background:#f7ead0}
+.cell.same{background:#ffe082}
+.cell.sel{background:#ffb74d!important;color:#4e2600;box-shadow:inset 0 0 0 2px #e65100}
+.cell.wrong{color:#d32f2f!important;background:#ffcdd2}
+.cell.hintflash{animation:hf 0.5s ease 5}
+@keyframes hf{0%,100%{box-shadow:inset 0 0 0 2px transparent}50%{box-shadow:inset 0 0 0 4px #2e7d32;background:#c8e6c9}}
+.cell .notes{display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;padding:2px}
+.cell .notes span{display:flex;align-items:center;justify-content:center;font-size:10px;color:#8d6e63;font-weight:500}
+#tools{display:flex;gap:8px;padding:10px 14px 2px}
+#tools button{flex:1;padding:10px 2px;border-radius:12px;border:1px solid rgba(240,200,131,.45);background:rgba(255,255,255,.07);color:#f5e9d2;font-size:14px;font-weight:700;cursor:pointer}
+#tools button.on{background:linear-gradient(180deg,#ffb300,#f57c00);color:#4a2c00;border-color:#ffb300}
+#pad{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;padding:10px 14px 16px}
+#pad button{aspect-ratio:1/1.15;border-radius:10px;border:1px solid rgba(240,200,131,.4);background:linear-gradient(180deg,#4a3520,#3a2a16);color:#ffe9bb;font-size:19px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#pad button small{font-size:9px;color:#c8a165;font-weight:500}
+#pad button.done{opacity:.28}
+.overlay{position:absolute;inset:0;background:rgba(16,10,4,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;z-index:10;text-align:center}
+.overlay.hidden{display:none}
+.overlay h1{font-size:32px;letter-spacing:3px;color:#f0c883;text-shadow:0 3px 0 #6d3b12;margin-bottom:12px}
+.overlay p{font-size:14.5px;line-height:1.85;color:#f7e7c8;max-width:330px}
+.overlay .big{margin-top:20px;background:linear-gradient(180deg,#ffb300,#f57c00);color:#4a2c00;font-size:19px;font-weight:800;border:none;border-radius:999px;padding:13px 46px;cursor:pointer;box-shadow:0 6px 0 #a34d00,0 10px 18px rgba(0,0,0,.4)}
+.overlay .big:active{transform:translateY(3px);box-shadow:0 3px 0 #a34d00}
+.overlay .ghost{margin-top:12px;background:transparent;color:#f0c883;font-size:15px;border:1px solid rgba(240,200,131,.55);border-radius:999px;padding:10px 30px;cursor:pointer}
+.overlay .best{margin-top:16px;font-size:14px;color:#f0c883}
+.overlay .final{font-size:21px;color:#fff;margin-top:6px}
+#diffRow{display:flex;gap:8px;margin-top:18px}
+#diffRow button{padding:10px 20px;border-radius:999px;border:1px solid rgba(240,200,131,.55);background:transparent;color:#f5e9d2;font-size:15px;font-weight:700;cursor:pointer}
+#diffRow button.on{background:linear-gradient(180deg,#ffb300,#f57c00);color:#4a2c00;border-color:#ffb300}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <a href="../index.html">← 大厅</a>
+    <div class="tname">🍵 数独小馆</div>
+    <button id="muteBtn" aria-label="静音">🔊</button>
+  </div>
+  <div id="hud">
+    <div class="hbox"><div class="lab">难度</div><div class="val" id="hudDiff">简单</div></div>
+    <div class="hbox"><div class="lab">错误</div><div class="val"><span id="mistakes">0</span>/3</div></div>
+    <div class="hbox"><div class="lab">用时</div><div class="val" id="clock">00:00</div></div>
+    <div class="hbox"><div class="lab">最高分</div><div class="val" id="bestHud">0</div></div>
+  </div>
+  <div id="hintBar">选一格，再点下方数字填入。卡住了就请掌柜给个「推理提示」——只讲方法，不报答案。</div>
+  <div id="boardWrap"><div id="board"></div></div>
+  <div id="tools">
+    <button id="noteBtn">✏️ 笔记：关</button>
+    <button id="eraseBtn">🧹 擦除</button>
+    <button id="hintBtn">💡 推理提示</button>
+    <button id="menuBtn">📋 换一题</button>
+  </div>
+  <div id="pad"></div>
+
+  <div id="startOverlay" class="overlay">
+    <h1>🍵 数独小馆</h1>
+    <p>九宫格里填 1–9，每行、每列、每宫都不重复。<br>填错 3 次，这局就泡汤啦。<br>提示只点方法，答案得自己推出来。</p>
+    <div id="diffRow">
+      <button data-d="easy" class="on">简单</button>
+      <button data-d="med">中等</button>
+      <button data-d="hard">困难</button>
+    </div>
+    <button class="big" id="startBtn">上茶开局</button>
+    <div class="best">🏆 最高分：<span id="startBest">0</span></div>
+  </div>
+
+  <div id="endOverlay" class="overlay hidden">
+    <h1 id="endTitle">🎉 满堂彩！</h1>
+    <p id="endText"></p>
+    <div class="final">本局得分：<span id="endScore">0</span></div>
+    <div class="best">🏆 最高分：<span id="endBest">0</span></div>
+    <button class="big" id="againBtn">再来一局</button>
+    <button class="ghost" id="menuBtn2">换个难度</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 极简 WebAudio 合成音效 ---------- */
+const Snd=(()=>{let ctx=null,muted=false;
+  function ac(){if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(ctx&&ctx.state==='suspended')ctx.resume();return ctx}
+  function tone(f,d,type,g,delay){if(muted)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),gn=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);gn.gain.setValueAtTime(g||.15,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn);gn.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+  return{
+    click(){tone(620,.05,'triangle',.1)},
+    good(){tone(740,.09,'sine',.14);tone(988,.1,'sine',.1,.05)},
+    bad(){tone(180,.18,'sawtooth',.12)},
+    pling(){tone(1046,.14,'sine',.13)},
+    win(){[523,659,784,1046,1318].forEach((f,i)=>tone(f,.22,'triangle',.15,i*.1))},
+    lose(){[392,330,262,196].forEach((f,i)=>tone(f,.2,'sine',.13,i*.12))},
+    get muted(){return muted},set muted(v){muted=v}
+  };})();
+
+/* ---------- 数独生成器（回溯 + 唯一解挖空） ---------- */
+const $=id=>document.getElementById(id);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function candMask(b,i){
+  const r=(i/9)|0,c=i%9;let used=0;
+  for(let k=0;k<9;k++){const v1=b[r*9+k],v2=b[k*9+c];if(v1)used|=1<<(v1-1);if(v2)used|=1<<(v2-1)}
+  const br=r-r%3,bc=c-c%3;
+  for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){const v=b[(br+dr)*9+bc+dc];if(v)used|=1<<(v-1)}
+  return(~used)&0x1FF;
+}
+const pop9=m=>{let n=0;for(let i=0;i<9;i++)if(m>>i&1)n++;return n};
+function countSolutions(b,limit){
+  let best=-1,bestMask=0,bestN=10;
+  for(let i=0;i<81;i++){
+    if(b[i]===0){const m=candMask(b,i),n=pop9(m);
+      if(n===0)return 0;
+      if(n<bestN){bestN=n;best=i;bestMask=m;if(n===1)break}}
+  }
+  if(best<0)return 1;
+  let total=0;
+  for(let d=1;d<=9;d++){
+    if(bestMask>>(d-1)&1){b[best]=d;total+=countSolutions(b,limit-total);b[best]=0;if(total>=limit)return total}
+  }
+  return total;
+}
+function genSolved(){
+  const b=Array(81).fill(0);
+  (function fill(){
+    const i=b.indexOf(0);if(i<0)return true;
+    const m=candMask(b,i);
+    for(const d of shuffle([1,2,3,4,5,6,7,8,9])){
+      if(m>>(d-1)&1){b[i]=d;if(fill())return true;b[i]=0}
+    }
+    return false;
+  })();
+  return b;
+}
+function genPuzzle(targetGivens){
+  let bestP=null,bestG=99;
+  for(let attempt=0;attempt<4;attempt++){
+    const sol=genSolved();const p=sol.slice();let givens=81;
+    for(const i of shuffle([...Array(81).keys()])){
+      if(givens<=targetGivens)break;
+      const bak=p[i];p[i]=0;
+      if(countSolutions(p.slice(),2)!==1)p[i]=bak;else givens--;
+    }
+    if(givens<bestG){bestG=givens;bestP={sol,p}}
+    if(givens<=targetGivens)break;
+  }
+  return bestP;
+}
+
+/* ---------- 对局状态 ---------- */
+const DIFF={easy:{name:'简单',givens:42,base:600},med:{name:'中等',givens:33,base:1000},hard:{name:'困难',givens:28,base:1500}};
+let diffKey='easy',sol,puzzle,val,given,wrong,notes,sel=-1,notesMode=false;
+let mistakes,hintsUsed,seconds,timer=null,playing=false,finished=false;
+let best=+(localStorage.getItem('gh_sudoku_best')||0);
+$('startBest').textContent=best;$('bestHud').textContent=best;
+
+const boardEl=$('board'),cellEls=[];
+for(let i=0;i<81;i++){
+  const d=document.createElement('div');d.className='cell';
+  const r=(i/9)|0,c=i%9;
+  if(c===2||c===5)d.classList.add('br');
+  if(r===2||r===5)d.classList.add('bb');
+  d.addEventListener('click',()=>{if(playing&&!finished){sel=i;Snd.click();render()}});
+  boardEl.appendChild(d);cellEls.push(d);
+}
+const padEl=$('pad'),padBtns=[];
+for(let d=1;d<=9;d++){
+  const b=document.createElement('button');b.innerHTML=d+'<small>余 9</small>';
+  b.addEventListener('click',()=>inputDigit(d));
+  padEl.appendChild(b);padBtns.push(b);
+}
+function effVal(i){return(val[i]&&!wrong[i])?val[i]:0}
+function render(){
+  const sr=sel>=0?((sel/9)|0):-1,sc=sel>=0?sel%9:-1,sv=sel>=0?val[sel]:0;
+  for(let i=0;i<81;i++){
+    const el=cellEls[i],r=(i/9)|0,c=i%9;let cls='cell';
+    if(c===2||c===5)cls+=' br';if(r===2||r===5)cls+=' bb';
+    if(given[i])cls+=' given';
+    if(sel>=0&&(r===sr||c===sc||((r/3|0)===(sr/3|0)&&(c/3|0)===(sc/3|0))))cls+=' peer';
+    if(sv&&val[i]===sv)cls+=' same';
+    if(i===sel)cls+=' sel';
+    if(wrong[i])cls+=' wrong';
+    el.className=cls;
+    if(val[i])el.textContent=val[i];
+    else if(notes[i].size){
+      let h='<div class="notes">';
+      for(let d=1;d<=9;d++)h+='<span>'+(notes[i].has(d)?d:'')+'</span>';
+      el.innerHTML=h+'</div>';
+    }else el.textContent='';
+  }
+  for(let d=1;d<=9;d++){
+    let used=0;for(let i=0;i<81;i++)if(val[i]===d&&sol[i]===d)used++;
+    const rem=9-used;padBtns[d-1].querySelector('small').textContent='余 '+rem;
+    padBtns[d-1].classList.toggle('done',rem<=0);
+  }
+  $('mistakes').textContent=mistakes;
+}
+function updClock(){$('clock').textContent=String((seconds/60)|0).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')}
+function inputDigit(d){
+  if(!playing||finished||sel<0||given[sel])return;
+  if(notesMode){
+    if(val[sel])return;
+    notes[sel].has(d)?notes[sel].delete(d):notes[sel].add(d);
+    Snd.click();render();return;
+  }
+  if(val[sel]===d&&!wrong[sel])return;
+  if(sol[sel]===d){
+    val[sel]=d;wrong[sel]=false;notes[sel].clear();
+    const r=(sel/9)|0,c=sel%9;
+    for(let i=0;i<81;i++){const rr=(i/9)|0,cc=i%9;
+      if(rr===r||cc===c||((rr/3|0)===(r/3|0)&&(cc/3|0)===(c/3|0)))notes[i].delete(d)}
+    Snd.good();render();checkWin();
+  }else{
+    if(val[sel]===d&&wrong[sel])return;
+    val[sel]=d;wrong[sel]=true;mistakes++;
+    Snd.bad();render();
+    if(mistakes>=3)endGame(false);
+  }
+}
+function erase(){
+  if(!playing||finished||sel<0||given[sel])return;
+  if(val[sel]){val[sel]=0;wrong[sel]=false}
+  else notes[sel].clear();
+  Snd.click();render();
+}
+function checkWin(){
+  for(let i=0;i<81;i++)if(val[i]!==sol[i])return;
+  endGame(true);
+}
+function endGame(win){
+  finished=true;clearInterval(timer);
+  let score=0;
+  if(win){
+    score=Math.max(100,DIFF[diffKey].base+Math.max(0,900-seconds)-mistakes*80-hintsUsed*30);
+    if(score>best){best=score;localStorage.setItem('gh_sudoku_best',best)}
+    Snd.win();
+  }else Snd.lose();
+  $('endTitle').textContent=win?'🎉 满堂彩！':'🍵 茶凉了';
+  $('endText').textContent=win
+    ?('难度「'+DIFF[diffKey].name+'」通关！用时 '+$('clock').textContent+'，错误 '+mistakes+' 次，用了 '+hintsUsed+' 次提示。')
+    :'错误满 3 次啦。别急，喝口茶，看清候选数再下手。';
+  $('endScore').textContent=score;$('endBest').textContent=best;$('bestHud').textContent=best;
+  $('endOverlay').classList.remove('hidden');
+}
+function hint(){
+  if(!playing||finished)return;
+  hintsUsed++;
+  const eff=Array.from({length:81},(_,i)=>effVal(i));
+  /* 唯一候选数：某格只剩一个候选 */
+  for(let i=0;i<81;i++){
+    if(eff[i])continue;
+    const m=candMask(eff,i);
+    if(pop9(m)===1){
+      flashCell(i);
+      $('hintBar').textContent='💡 看高亮这一格（第 '+(((i/9)|0)+1)+' 行第 '+(i%9+1)+' 列）：它所在的行、列、宫里，其余八个数字都已出现，只剩下唯一一个候选——这就是「唯一候选数」法，放心填。';
+      Snd.pling();return;
+    }
+  }
+  /* 唯一位置：某单元里某数字只有一个落点 */
+  const units=[];
+  for(let r=0;r<9;r++)units.push({cells:[...Array(9).keys()].map(k=>r*9+k),desc:'第 '+(r+1)+' 行',unit:'行'});
+  for(let c=0;c<9;c++)units.push({cells:[...Array(9).keys()].map(k=>k*9+c),desc:'第 '+(c+1)+' 列',unit:'列'});
+  for(let br=0;br<3;br++)for(let bc=0;bc<3;bc++){
+    const cells=[];for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++)cells.push((br*3+dr)*9+bc*3+dc);
+    units.push({cells,desc:'第 '+(br*3+bc+1)+' 宫',unit:'宫'});
+  }
+  for(const u of units){
+    const present=new Set(u.cells.map(i=>eff[i]).filter(Boolean));
+    for(let d=1;d<=9;d++){
+      if(present.has(d))continue;
+      const spots=u.cells.filter(i=>!eff[i]&&(candMask(eff,i)>>(d-1)&1));
+      if(spots.length===1){
+        flashCell(spots[0]);
+        $('hintBar').textContent='💡 看'+u.desc+'：有个数字在这一'+u.unit+'里到处都被挡住，只剩高亮这一格能放——这就是「唯一位置」法。';
+        Snd.pling();return;
+      }
+    }
+  }
+  $('hintBar').textContent='💡 当前局面没有一步到位的推理点。先切换到笔记模式，把每个空格的候选数记全，再回来找「唯一候选」。';
+  Snd.pling();
+}
+function flashCell(i){
+  sel=i;render();
+  cellEls[i].classList.add('hintflash');
+  setTimeout(()=>cellEls[i].classList.remove('hintflash'),2600);
+}
+function startGame(){
+  const g=genPuzzle(DIFF[diffKey].givens);
+  sol=g.sol;puzzle=g.p;
+  val=puzzle.slice();given=puzzle.map(v=>v!==0);
+  wrong=Array(81).fill(false);notes=Array.from({length:81},()=>new Set());
+  sel=-1;mistakes=0;hintsUsed=0;seconds=0;finished=false;playing=true;
+  $('hudDiff').textContent=DIFF[diffKey].name;
+  $('hintBar').textContent='选一格，再点下方数字填入。卡住了就请掌柜给个「推理提示」——只讲方法，不报答案。';
+  clearInterval(timer);timer=setInterval(()=>{seconds++;updClock()},1000);
+  updClock();render();
+  $('startOverlay').classList.add('hidden');$('endOverlay').classList.add('hidden');
+}
+document.querySelectorAll('#diffRow button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#diffRow button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');diffKey=b.dataset.d;Snd.click();
+  });
+});
+$('startBtn').addEventListener('click',()=>{
+  Snd.click();$('startBtn').textContent='正在出题…';
+  setTimeout(()=>{startGame();$('startBtn').textContent='上茶开局'},30);
+});
+$('againBtn').addEventListener('click',()=>{Snd.click();startGame()});
+const backToMenu=()=>{Snd.click();$('endOverlay').classList.add('hidden');$('startOverlay').classList.remove('hidden');playing=false;clearInterval(timer)};
+$('menuBtn2').addEventListener('click',backToMenu);
+$('menuBtn').addEventListener('click',backToMenu);
+$('noteBtn').addEventListener('click',()=>{
+  notesMode=!notesMode;
+  $('noteBtn').textContent='✏️ 笔记：'+(notesMode?'开':'关');
+  $('noteBtn').classList.toggle('on',notesMode);Snd.click();
+});
+$('eraseBtn').addEventListener('click',erase);
+$('hintBtn').addEventListener('click',hint);
+$('muteBtn').addEventListener('click',()=>{Snd.muted=!Snd.muted;$('muteBtn').textContent=Snd.muted?'🔇':'🔊';if(!Snd.muted)Snd.click()});
+document.addEventListener('keydown',e=>{
+  if(!playing||finished)return;
+  if(e.key>='1'&&e.key<='9')inputDigit(+e.key);
+  else if(e.key==='Backspace'||e.key==='Delete'){erase();e.preventDefault()}
+  else if(e.key==='n'||e.key==='N')$('noteBtn').click();
+  else if(sel>=0&&e.key.startsWith('Arrow')){
+    let r=(sel/9)|0,c=sel%9;
+    if(e.key==='ArrowLeft')c=Math.max(0,c-1);if(e.key==='ArrowRight')c=Math.min(8,c+1);
+    if(e.key==='ArrowUp')r=Math.max(0,r-1);if(e.key==='ArrowDown')r=Math.min(8,r+1);
+    sel=r*9+c;render();e.preventDefault();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>山海守关</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#10131f;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#1a2138,#11152a)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.35)}
+#topbar a{color:#a9c4ff;text-decoration:none;font-size:15px}
+#topbar .t{font-weight:700;font-size:17px;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:16px;cursor:pointer}
+#hud{display:flex;justify-content:space-around;padding:8px 4px;background:rgba(0,0,0,.25);font-size:14px}
+#hud b{color:#ffd34d}
+#cv{display:block;margin:4px auto;background:#232c49;border-radius:10px;touch-action:none;width:94%}
+#towerbar{display:flex;gap:8px;padding:8px 12px}
+.tbtn{flex:1;background:rgba(255,255,255,.09);border:2px solid rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:8px 2px;font-size:14px;cursor:pointer;line-height:1.4}
+.tbtn small{display:block;font-size:11px;color:#b9c6ea}
+.tbtn.sel{border-color:#ffd34d;background:rgba(255,211,77,.16)}
+#panel{display:none;margin:0 12px 8px;background:rgba(255,255,255,.09);border:1.5px solid #ffd34d;border-radius:12px;padding:9px 12px;font-size:14px;align-items:center;justify-content:space-between;gap:8px}
+#panel button{background:#ffd34d;border:none;color:#4a3200;font-weight:700;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+#panel button.gray{background:rgba(255,255,255,.2);color:#fff}
+.bigbtn{background:linear-gradient(180deg,#ffb03a,#f07f13);border:none;color:#4a1c00;font-weight:800;font-size:17px;padding:11px 30px;border-radius:999px;cursor:pointer;box-shadow:0 4px 14px rgba(240,127,19,.5);letter-spacing:1px}
+.bigbtn:active{transform:scale(.96)}
+#waveRow{text-align:center;padding:2px 0 12px}
+#tip{text-align:center;font-size:13px;color:#b9c6ea;min-height:18px;padding:0 10px 6px}
+.overlay{position:fixed;inset:0;background:rgba(5,7,16,.86);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{background:linear-gradient(160deg,#26335c,#151d3a);border:2px solid #4a639f;border-radius:18px;padding:26px 22px;max-width:400px;width:88%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h1{font-size:29px;letter-spacing:3px;margin-bottom:8px}
+.card .em{font-size:50px;margin:4px 0}
+.card p{color:#ccd8f5;font-size:15px;line-height:1.7;margin:6px 0}
+.card .best{color:#ffd34d;font-size:14px;margin-top:10px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><a href="../index.html">← 大厅</a><span class="t">🏯 山海守关</span><button id="muteBtn">🔊</button></div>
+  <div id="hud"><span>💰 <b id="hGold">120</b></span><span>🏯 城门 <b id="hLives">10</b></span><span>🌊 第 <b id="hWave">0</b>/12 波</span><span>⭐ <b id="hScore">0</b></span></div>
+  <canvas id="cv" width="440" height="528"></canvas>
+  <div id="tip">选塔后点空格放塔；相邻放同族异兽有羁绊 +10% 攻击</div>
+  <div id="towerbar">
+    <button class="tbtn sel" data-t="lion">🦁 狻猊<small>近战高伤 · ¥50</small></button>
+    <button class="tbtn" data-t="bird">🦅 毕方<small>远程火攻 · ¥80</small></button>
+    <button class="tbtn" data-t="fish">🐋 鲲鹏<small>减速光环 · ¥70</small></button>
+  </div>
+  <div id="panel"><span id="panelTxt"></span><span><button id="upBtn">⬆️ 升级</button> <button id="sellBtn">💰 出售</button> <button id="closeBtn" class="gray">✖</button></span></div>
+  <div id="waveRow"><button class="bigbtn" id="waveBtn">🌊 开始第 1 波</button></div>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="em">🏯</div>
+    <h1>山海守关</h1>
+    <p>妖兽沿山道冲向城门！选异兽塔点空格布防：狻猊近战、毕方远程、鲲鹏减速。<br><b style="color:#ffd34d">相邻放同族塔会结成羁绊，攻击 +10%</b>，地图上会亮起金线。<br>点已建的塔可以升级或出售。守住 12 波进攻即胜，城门血量归零则败。</p>
+    <button class="bigbtn" id="startBtn">开始守关</button>
+    <div class="best">🏆 最高分：<span id="bestStart">0</span></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="em" id="endEm">🎉</div>
+    <h1 id="endTitle">守关成功！</h1>
+    <p id="endText"></p>
+    <p>本局得分 <b style="color:#ffd34d" id="endScore">0</b></p>
+    <div class="best">🏆 最高分：<span id="bestEnd">0</span></div>
+    <div style="margin-top:16px"><button class="bigbtn" id="againBtn">再守一局</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,g,slideTo){ if(muted||!ac())return; const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+d); gn.gain.setValueAtTime(g||.12,t); gn.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t+d); }
+function sfx(n){ if(n==='click')beep(620,.05,'square',.07); else if(n==='build'){beep(523,.08,'triangle',.12);setTimeout(()=>beep(784,.1,'triangle',.12),60);} else if(n==='shoot')beep(760,.04,'square',.04,420); else if(n==='hit')beep(240,.04,'square',.05,150); else if(n==='gold'){beep(1245,.06,'sine',.07);} else if(n==='leak')beep(180,.22,'sawtooth',.15,80); else if(n==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle',.14),i*110));} else if(n==='bad')beep(200,.15,'sawtooth',.1,120); }
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; });
+
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const CELL=44, COLS=10, ROWS=12, W=440, H=528, SLUG='shouguan';
+const best=()=>+(localStorage.getItem('gh_'+SLUG+'_best')||0);
+document.getElementById('bestStart').textContent=best();
+
+function loadImg(src,em){ const o={img:new Image(),ok:false,em}; o.img.onload=()=>{o.ok=true;}; o.img.onerror=()=>{o.ok=false;}; o.img.src=src; return o; }
+const TDEF={
+  lion:{name:'狻猊', spr:loadImg('../assets/tower_lion.png','🦁'), cost:50, range:74, dmg:16, rate:.5, proj:null},
+  bird:{name:'毕方', spr:loadImg('../assets/tower_bird.png','🦅'), cost:80, range:128, dmg:11, rate:.45, proj:'🔥'},
+  fish:{name:'鲲鹏', spr:loadImg('../assets/tower_fish.png','🐋'), cost:70, range:104, dmg:5, rate:.6, proj:'❄️', slow:.45, slowT:1.2}
+};
+/* 路径（格坐标折线） */
+const WAY=[[0,2],[7,2],[7,5],[2,5],[2,8],[8,8],[8,11]];
+const pathCells=new Set();
+(function(){ for(let i=0;i<WAY.length-1;i++){ let [x1,y1]=WAY[i], [x2,y2]=WAY[i+1];
+  const dx=Math.sign(x2-x1), dy=Math.sign(y2-y1); let x=x1,y=y1; pathCells.add(x+','+y);
+  while(x!==x2||y!==y2){ x+=dx; y+=dy; pathCells.add(x+','+y); } } })();
+const wayPx=WAY.map(([c,r])=>[c*CELL+CELL/2, r*CELL+CELL/2]);
+wayPx.unshift([-30, 2*CELL+CELL/2]); wayPx.push([8*CELL+CELL/2, H+30]);
+
+let gold, lives, wave, score, kills, towers, foes, projs, parts, state, spawnQueue, spawnT, selType, selTower, raf, lastTs;
+function reset(){
+  gold=120; lives=10; wave=0; score=0; kills=0;
+  towers=[]; foes=[]; projs=[]; parts=[]; state='build'; spawnQueue=0; spawnT=0; selTower=null;
+  document.getElementById('waveBtn').textContent='🌊 开始第 1 波';
+  document.getElementById('panel').style.display='none';
+  updHud();
+}
+function startGame(){
+  reset();
+  document.getElementById('startOv').classList.add('hide');
+  document.getElementById('endOv').classList.add('hide');
+  if(raf)cancelAnimationFrame(raf); lastTs=0; raf=requestAnimationFrame(loop);
+}
+function updHud(){
+  document.getElementById('hGold').textContent=gold;
+  document.getElementById('hLives').textContent=lives;
+  document.getElementById('hWave').textContent=wave;
+  document.getElementById('hScore').textContent=score;
+}
+function bonded(t){
+  return towers.some(o=>o!==t&&o.type===t.type&&(Math.abs(o.c-t.c)+Math.abs(o.r-t.r))===1);
+}
+function towerDmg(t){ return t.dmg*(bonded(t)?1.1:1)*(1+.45*(t.lvl-1)); }
+function startWave(){
+  if(state!=='build')return;
+  wave++; state='wave'; spawnQueue=6+wave*2; spawnT=0;
+  document.getElementById('waveBtn').textContent='🌊 第 '+wave+' 波进攻中…';
+  document.getElementById('tip').textContent='第 '+wave+' 波来了，守住城门！';
+  sfx('build'); updHud();
+}
+function spawnFoe(){
+  const wv=wave; const r=Math.random();
+  const base=26*Math.pow(1.32,wv-1);
+  let f;
+  if(r<.55) f={hp:base, spd:44+wv*1.5, em:'🐺', reward:7, dmg:1};
+  else if(r<.82) f={hp:base*.55, spd:78+wv*2, em:'🐍', reward:8, dmg:1};
+  else f={hp:base*2.6, spd:30, em:'🐗', reward:13, dmg:2};
+  f.maxhp=f.hp; f.x=wayPx[0][0]; f.y=wayPx[0][1]; f.seg=1; f.slowUntil=0;
+  foes.push(f);
+}
+function foePos(f,dt){
+  const [tx,ty]=wayPx[f.seg]; const dx=tx-f.x, dy=ty-f.y, d=Math.hypot(dx,dy);
+  const sp=f.spd*(performance.now()<f.slowUntil? (1-.45):1);
+  if(d<sp*dt){ f.x=tx; f.y=ty; f.seg++; if(f.seg>=wayPx.length)return true; }
+  else { f.x+=dx/d*sp*dt; f.y+=dy/d*sp*dt; }
+  return false;
+}
+function endGame(win){
+  state='over';
+  score+= wave*100 + lives*40;
+  const b=best(); if(score>b)localStorage.setItem('gh_'+SLUG+'_best',score);
+  document.getElementById('endEm').textContent=win?'🏆':'🏚️';
+  document.getElementById('endTitle').textContent=win?'守关成功！':'城门失守';
+  document.getElementById('endText').textContent=win?('12 波妖兽全数击退，城门屹立不倒！共击杀 '+kills+' 兽。'):('第 '+wave+' 波妖兽冲破了城门……共守住 '+(wave-1)+' 波，击杀 '+kills+' 兽。');
+  document.getElementById('endScore').textContent=score;
+  document.getElementById('bestEnd').textContent=best();
+  document.getElementById('endOv').classList.remove('hide');
+  document.getElementById('waveBtn').textContent='已结束';
+  sfx(win?'win':'leak');
+}
+/* 输入 */
+let buildType='lion';
+document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>{
+  buildType=b.dataset.t; selTower=null; document.getElementById('panel').style.display='none';
+  document.querySelectorAll('.tbtn').forEach(x=>x.classList.toggle('sel',x===b)); sfx('click');
+}));
+function cvPos(e){ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height}; }
+cv.addEventListener('pointerdown',e=>{
+  if(state==='over')return;
+  const p=cvPos(e); const c=Math.floor(p.x/CELL), r=Math.floor(p.y/CELL);
+  if(c<0||c>=COLS||r<0||r>=ROWS)return;
+  const exist=towers.find(t=>t.c===c&&t.r===r);
+  if(exist){ selTower=exist; showPanel(); sfx('click'); return; }
+  selTower=null; document.getElementById('panel').style.display='none';
+  if(pathCells.has(c+','+r)){ document.getElementById('tip').textContent='🚫 山道上不能建塔'; sfx('bad'); return; }
+  const def=TDEF[buildType];
+  if(gold<def.cost){ document.getElementById('tip').textContent='💸 金币不够，先打怪攒钱'; sfx('bad'); return; }
+  gold-=def.cost;
+  towers.push({c,r,type:buildType,dmg:def.dmg,rate:def.rate,range:def.range,cd:0,lvl:1,invested:def.cost});
+  sfx('build'); updHud();
+});
+function showPanel(){
+  const t=selTower, def=TDEF[t.type];
+  const upCost=Math.round(def.cost*.8*t.lvl);
+  document.getElementById('panelTxt').innerHTML=def.spr.em+' '+def.name+' Lv.'+t.lvl+(bonded(t)?' · 🔗羁绊中':'')+'<br>升级 ¥'+upCost+'（伤害+45%）· 出售 ¥'+Math.round(t.invested*.7);
+  document.getElementById('upBtn').textContent= t.lvl>=3?'已满级':'⬆️ 升级 ¥'+upCost;
+  document.getElementById('panel').style.display='flex';
+}
+document.getElementById('upBtn').addEventListener('click',()=>{
+  if(!selTower||selTower.lvl>=3)return; const def=TDEF[selTower.type]; const cost=Math.round(def.cost*.8*selTower.lvl);
+  if(gold<cost){ sfx('bad'); return; }
+  gold-=cost; selTower.lvl++; selTower.invested+=cost; sfx('build'); showPanel(); updHud();
+});
+document.getElementById('sellBtn').addEventListener('click',()=>{
+  if(!selTower)return; gold+=Math.round(selTower.invested*.7);
+  towers=towers.filter(t=>t!==selTower); selTower=null;
+  document.getElementById('panel').style.display='none'; sfx('gold'); updHud();
+});
+document.getElementById('closeBtn').addEventListener('click',()=>{ selTower=null; document.getElementById('panel').style.display='none'; });
+document.getElementById('waveBtn').addEventListener('click',()=>{ ac(); startWave(); });
+document.getElementById('startBtn').addEventListener('click',()=>{ ac(); sfx('click'); startGame(); });
+document.getElementById('againBtn').addEventListener('click',()=>{ sfx('click'); startGame(); });
+
+function update(dt){
+  if(state==='wave'){
+    if(spawnQueue>0){ spawnT-=dt; if(spawnT<=0){ spawnFoe(); spawnQueue--; spawnT=.85; } }
+    else if(foes.length===0){ gold+=20; score+=50;
+      if(wave>=12){ endGame(true); }
+      else { state='build'; document.getElementById('waveBtn').textContent='🌊 开始第 '+(wave+1)+' 波'; document.getElementById('tip').textContent='这波守住了！+¥20 布防金，准备下一波'; }
+      updHud();
+    }
+  }
+  for(let i=foes.length-1;i>=0;i--){ const f=foes[i];
+    if(foePos(f,dt)){ foes.splice(i,1); lives-=f.dmg; sfx('leak'); updHud(); if(lives<=0){ lives=0; endGame(false); return; } } }
+  towers.forEach(t=>{ const def=TDEF[t.type]; t.cd-=dt;
+    if(t.cd<=0){ let tgt=null, bd=1e9;
+      foes.forEach(f=>{ const d=Math.hypot(f.x-(t.c*CELL+22), f.y-(t.r*CELL+22)); if(d<t.range&&d<bd){ bd=d; tgt=f; } });
+      if(tgt){ t.cd=t.rate;
+        if(def.proj){ projs.push({x:t.c*CELL+22,y:t.r*CELL+22,tgt,em:def.proj,dmg:towerDmg(t),slow:def.slow||0,slowT:def.slowT||0}); sfx('shoot'); }
+        else { tgt.hp-=towerDmg(t); parts.push({x:tgt.x,y:tgt.y,t:.2,txt:'⚔️'}); sfx('hit'); if(tgt.hp<=0)killFoe(tgt); }
+      } }
+  });
+  for(let i=projs.length-1;i>=0;i--){ const p=projs[i];
+    if(!foes.includes(p.tgt)){ projs.splice(i,1); continue; }
+    const dx=p.tgt.x-p.x, dy=p.tgt.y-p.y, d=Math.hypot(dx,dy);
+    if(d<14){ p.tgt.hp-=p.dmg; if(p.slow)p.tgt.slowUntil=performance.now()+p.slowT*1000;
+      parts.push({x:p.tgt.x,y:p.tgt.y,t:.22,txt:p.em}); sfx('hit');
+      if(p.tgt.hp<=0)killFoe(p.tgt);
+      projs.splice(i,1); }
+    else { p.x+=dx/d*380*dt; p.y+=dy/d*380*dt; } }
+  for(let i=parts.length-1;i>=0;i--){ parts[i].t-=dt; parts[i].y-=24*dt; if(parts[i].t<=0)parts.splice(i,1); }
+}
+function killFoe(f){
+  const i=foes.indexOf(f); if(i<0)return;
+  foes.splice(i,1); kills++; gold+=f.reward; score+=5; sfx('gold');
+  parts.push({x:f.x,y:f.y,t:.35,txt:'💥'});
+  updHud();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const isPath=pathCells.has(c+','+r);
+    ctx.fillStyle=isPath? '#8a6f47' : ((c+r)%2? '#27335a':'#242f52');
+    ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);
+  }
+  ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🏯', 8*CELL+22, 11*CELL+22);
+  /* 羁绊连线 */
+  ctx.strokeStyle='rgba(255,211,77,.85)'; ctx.lineWidth=3;
+  towers.forEach(t=>{ towers.forEach(o=>{ if(o!==t&&o.type===t.type&&o.c===t.c+1&&o.r===t.r){ ctx.beginPath(); ctx.moveTo(t.c*CELL+22,t.r*CELL+22); ctx.lineTo(o.c*CELL+22,o.r*CELL+22); ctx.stroke(); }
+    if(o!==t&&o.type===t.type&&o.r===t.r+1&&o.c===t.c){ ctx.beginPath(); ctx.moveTo(t.c*CELL+22,t.r*CELL+22); ctx.lineTo(o.c*CELL+22,o.r*CELL+22); ctx.stroke(); } }); });
+  ctx.lineWidth=1;
+  towers.forEach(t=>{ const def=TDEF[t.type]; const x=t.c*CELL+22, y=t.r*CELL+22;
+    if(selTower===t){ ctx.fillStyle='rgba(255,211,77,.16)'; ctx.beginPath(); ctx.arc(x,y,t.range,0,7); ctx.fill(); }
+    if(def.spr.ok)ctx.drawImage(def.spr.img,x-19,y-19,38,38);
+    else { ctx.font='30px sans-serif'; ctx.fillText(def.spr.em,x,y); }
+    ctx.font='10px sans-serif'; ctx.fillStyle='#ffd34d'; ctx.fillText('★'.repeat(t.lvl),x,y+17);
+    if(bonded(t)){ ctx.font='11px sans-serif'; ctx.fillText('🔗',x+14,y-14); } });
+  foes.forEach(f=>{ ctx.font='25px sans-serif'; ctx.fillText(f.em,f.x,f.y);
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(f.x-16,f.y-20,32,4.5);
+    ctx.fillStyle= performance.now()<f.slowUntil? '#7ad4ff':'#ff6b57'; ctx.fillRect(f.x-16,f.y-20,32*Math.max(0,f.hp/f.maxhp),4.5); });
+  projs.forEach(p=>{ ctx.font='15px sans-serif'; ctx.fillText(p.em,p.x,p.y); });
+  parts.forEach(p=>{ ctx.globalAlpha=Math.max(0,p.t*3); ctx.font='15px sans-serif'; ctx.fillText(p.txt,p.x,p.y); ctx.globalAlpha=1; });
+}
+function loop(ts){
+  const dt=Math.min(.05,(ts-lastTs)/1000||0.016); lastTs=ts;
+  if(state==='build'||state==='wave')update(dt);
+  draw();
+  raf=requestAnimationFrame(loop);
+}
+reset(); draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>一笔绘山海 · 游戏大厅</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:linear-gradient(180deg,#131a2e,#1d2b4d 60%,#24365e); color:#eef2ff; min-height:100vh; }
+  .wrap { max-width:480px; margin:0 auto; padding:10px 12px 24px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:6px 2px 10px; }
+  .topbar a { color:#ffd98a; text-decoration:none; font-size:15px; font-weight:600; padding:6px 8px; }
+  .topbar h1 { font-size:19px; letter-spacing:2px; }
+  #muteBtn { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:999px; width:38px; height:38px; font-size:17px; cursor:pointer; }
+  .hud { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-size:14px; }
+  .hud b { color:#ffd98a; }
+  .beastName { text-align:center; font-size:17px; margin:10px 0 2px; color:#ffe9b8; letter-spacing:1px; }
+  .hint { text-align:center; font-size:12.5px; color:#a9bce0; min-height:18px; margin-bottom:6px; }
+  #cv { display:block; margin:0 auto; background:radial-gradient(circle at 50% 38%,#26355c,#17233f 75%); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); touch-action:none; }
+  .btnrow { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+  .btn { background:linear-gradient(180deg,#3d5a96,#2c4476); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:12px; padding:10px 18px; font-size:15px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.3); }
+  .btn:active { transform:scale(.96); }
+  .btn.gold { background:linear-gradient(180deg,#e8a83e,#c47f1d); border-color:#ffd98a; font-weight:700; }
+  .scroll { margin-top:16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; }
+  .scroll h3 { font-size:13px; color:#a9bce0; font-weight:600; margin-bottom:8px; letter-spacing:1px; }
+  .beasts { display:flex; flex-wrap:wrap; gap:7px; }
+  .beasts span { font-size:20px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(255,255,255,.06); filter:grayscale(1); opacity:.35; }
+  .beasts span.on { filter:none; opacity:1; background:rgba(255,217,138,.18); box-shadow:inset 0 0 0 1px rgba(255,217,138,.5); }
+  .beasts span.cur { box-shadow:inset 0 0 0 2px #ffd98a; opacity:.8; filter:none; }
+  .ov { position:fixed; inset:0; background:rgba(8,12,24,.82); display:flex; align-items:center; justify-content:center; z-index:20; padding:20px; }
+  .ov.hidden { display:none; }
+  .card { background:linear-gradient(180deg,#24365e,#1a2745); border:1px solid rgba(255,217,138,.35); border-radius:20px; padding:26px 24px; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+  .card h2 { font-size:26px; letter-spacing:3px; margin-bottom:10px; }
+  .card p { font-size:14.5px; line-height:1.75; color:#c9d6f2; margin-bottom:8px; }
+  .card .big { font-size:44px; margin-bottom:6px; }
+  .card .score { font-size:20px; color:#ffd98a; margin:10px 0 4px; }
+  .card .best { font-size:13.5px; color:#a9bce0; margin-bottom:16px; }
+  #startBtn, #againBtn, #nextBtn { background:linear-gradient(180deg,#e8a83e,#c47f1d); color:#fff; border:none; border-radius:14px; padding:13px 42px; font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(196,127,29,.45); letter-spacing:2px; }
+  #startBtn:active, #againBtn:active, #nextBtn:active { transform:scale(.97); }
+  .winbar { text-align:center; margin-top:12px; display:none; }
+  .winbar.show { display:block; }
+  .winbar .msg { font-size:16px; color:#ffd98a; margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../index.html">← 大厅</a>
+    <h1>一笔绘山海</h1>
+    <button id="muteBtn" aria-label="静音">🔊</button>
+  </div>
+  <div class="hud">
+    <div>关卡 <b id="lvNow">1</b> / <span id="lvAll">12</span></div>
+    <div>已画 <b id="edgeNow">0</b> / <span id="edgeAll">0</span> 笔</div>
+    <div>得分 <b id="scoreNow">0</b></div>
+  </div>
+  <div class="beastName" id="beastName"></div>
+  <div class="hint" id="hint"></div>
+  <canvas id="cv" width="440" height="440"></canvas>
+  <div class="btnrow">
+    <button class="btn" id="undoBtn">↩ 撤销</button>
+    <button class="btn" id="resetBtn">↻ 重开</button>
+  </div>
+  <div class="winbar" id="winbar">
+    <div class="msg" id="winMsg"></div>
+    <button class="btn gold" id="nextBtn">下一关 →</button>
+  </div>
+  <div class="scroll">
+    <h3>📜 山海图卷 · 点亮进度</h3>
+    <div class="beasts" id="beasts"></div>
+  </div>
+</div>
+
+<div class="ov" id="startOv">
+  <div class="card">
+    <div class="big">🦊</div>
+    <h2>一笔绘山海</h2>
+    <p>从任意节点起笔，一笔画完所有连线，<br>中途不能重复走同一条线。</p>
+    <p>画完的图形，就是一只《山海经》异兽的轮廓。<br>发光的节点是推荐起笔点。</p>
+    <button id="startBtn">开始游戏</button>
+    <div class="best" id="bestStart">最高分：0</div>
+  </div>
+</div>
+
+<div class="ov hidden" id="endOv">
+  <div class="card">
+    <div class="big">🏮</div>
+    <h2>图卷绘成！</h2>
+    <p>十二只异兽全部点亮，山海图卷完成。</p>
+    <div class="score">本局得分：<span id="finalScore">0</span></div>
+    <div class="best">最高分：<span id="finalBest">0</span></div>
+    <button id="againBtn">再来一局</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 极简 WebAudio 音效 ---------- */
+let AC = null, muted = false;
+function beep(f, d, type, v, delay) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const t = AC.currentTime + (delay || 0);
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = f || 660;
+    g.gain.setValueAtTime(v || 0.14, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (d || 0.08));
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + (d || 0.08) + 0.03);
+  } catch (e) {}
+}
+const sfx = {
+  tap:  () => beep(620, 0.05, 'sine', 0.08),
+  step: () => beep(520 + Math.random() * 160, 0.06, 'triangle', 0.11),
+  undo: () => beep(320, 0.07, 'sine', 0.1),
+  bad:  () => beep(170, 0.14, 'sawtooth', 0.09),
+  good: () => { beep(660, 0.09, 'sine', 0.13); beep(880, 0.12, 'sine', 0.13, 0.09); },
+  win:  () => { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.14, 'triangle', 0.13, i * 0.1)); }
+};
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', () => {
+  muted = !muted;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  if (!muted) sfx.tap();
+});
+
+/* ---------- 关卡数据：节点(0-100坐标) + 连线 ---------- */
+/* 构造均满足欧拉路径条件（奇点 0 或 2 个），保底一笔画可解 */
+const LEVELS = [
+  { name: '九尾狐', emoji: '🦊', pts: [[50,8],[88,38],[72,88],[28,88],[12,38],[50,42]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,0],[5,0],[5,3]] },
+  { name: '毕方', emoji: '🐦', pts: [[50,6],[90,80],[10,80],[50,36],[68,64],[32,64]],
+    edges: [[0,1],[1,2],[2,0],[3,4],[4,5],[5,3],[0,3],[3,1]] },
+  { name: '鲲鹏', emoji: '🐋', pts: [[20,50],[38,26],[62,22],[82,36],[84,62],[60,80],[36,78],[5,28],[5,68]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[0,7],[7,8],[8,0]] },
+  { name: '麒麟', emoji: '🦌', pts: [[25,30],[75,30],[75,78],[25,78],[12,14],[4,26]],
+    edges: [[0,1],[1,2],[2,3],[3,0],[0,2],[0,4],[4,5]] },
+  { name: '朱雀', emoji: '🦜', pts: [[14,52],[30,26],[50,16],[70,26],[86,52],[50,62]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[0,2],[2,4],[4,0],[5,2],[5,4]] },
+  { name: '白泽', emoji: '🐐', pts: [[18,24],[50,24],[82,24],[82,76],[50,76],[18,76]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[1,4]] },
+  { name: '玄武', emoji: '🐢', pts: [[88,50],[69,83],[31,83],[12,50],[31,17],[69,17]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,2],[2,4],[4,0]] },
+  { name: '青龙', emoji: '🐉', pts: [[8,50],[30,16],[58,10],[80,26],[92,50],[34,50],[62,54],[28,78],[56,88],[78,70]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,4],[0,7],[7,8],[8,9],[9,4]] },
+  { name: '穷奇', emoji: '🐅', pts: [[22,24],[78,24],[78,76],[22,76],[50,42]],
+    edges: [[0,1],[1,2],[2,3],[3,0],[0,2],[4,0],[4,2]] },
+  { name: '应龙', emoji: '🐲', pts: [[50,44],[24,16],[76,16],[20,74],[80,74],[90,8]],
+    edges: [[0,1],[1,2],[2,0],[0,3],[3,4],[4,0],[2,5]] },
+  { name: '凤凰', emoji: '🦚', pts: [[50,8],[79,22],[90,52],[73,82],[44,92],[15,74],[11,40]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[0,2],[2,4]] },
+  { name: '饕餮', emoji: '👹', pts: [[88,50],[69,83],[31,83],[12,50],[31,17],[69,17],[50,50]],
+    edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[0,2],[2,4],[4,0],[6,0]] }
+];
+
+/* ---------- 状态 ---------- */
+const SLUG = 'yibi';
+let level = 0, score = 0, best = +(localStorage.getItem('gh_' + SLUG + '_best') || 0);
+let path = [];            // 已走过的节点序列
+let usedEdges = new Set(); // 'a-b'
+let cur = -1;              // 当前所在节点
+let won = false;
+const doneLevels = new Set();
+
+/* ---------- DOM / Canvas ---------- */
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+function fitCanvas() {
+  const w = Math.min(document.querySelector('.wrap').clientWidth - 24, 440);
+  cv.style.width = w + 'px'; cv.style.height = w + 'px';
+  cv.width = w * DPR; cv.height = w * DPR;
+  draw();
+}
+function P(i) { const p = LEVELS[level].pts[i]; return [p[0] / 100 * cv.width, p[1] / 100 * cv.height]; }
+function ekey(a, b) { return a < b ? a + '-' + b : b + '-' + a; }
+function neighbors(i) {
+  const out = [];
+  LEVELS[level].edges.forEach(e => { if (e[0] === i) out.push(e[1]); else if (e[1] === i) out.push(e[0]); });
+  return out;
+}
+function oddNodes() {
+  const deg = LEVELS[level].pts.map(() => 0);
+  LEVELS[level].edges.forEach(e => { deg[e[0]]++; deg[e[1]]++; });
+  const odds = [];
+  deg.forEach((d, i) => { if (d % 2 === 1) odds.push(i); });
+  return odds;
+}
+
+function draw(pointer) {
+  const L = LEVELS[level];
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  /* 未画的线 */
+  ctx.lineCap = 'round';
+  L.edges.forEach(e => {
+    if (usedEdges.has(ekey(e[0], e[1]))) return;
+    const a = P(e[0]), b = P(e[1]);
+    ctx.strokeStyle = 'rgba(200,215,245,0.28)'; ctx.lineWidth = 2.2 * DPR;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  });
+  /* 已画的线 */
+  if (path.length > 1) {
+    const grad = ctx.createLinearGradient(0, 0, cv.width, cv.height);
+    grad.addColorStop(0, '#ffb84d'); grad.addColorStop(1, '#ff7847');
+    ctx.strokeStyle = grad; ctx.lineWidth = 5 * DPR;
+    ctx.shadowColor = 'rgba(255,150,60,.55)'; ctx.shadowBlur = 10 * DPR;
+    ctx.beginPath();
+    path.forEach((n, i) => { const p = P(n); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
+    if (pointer && cur >= 0) ctx.lineTo(pointer[0], pointer[1]);
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+  /* 节点 */
+  const odds = oddNodes();
+  L.pts.forEach((pt, i) => {
+    const p = P(i);
+    const isCur = i === cur, isOdd = odds.includes(i);
+    ctx.beginPath();
+    ctx.fillStyle = isCur ? '#ffd98a' : (isOdd ? '#ffe9b8' : '#dbe6ff');
+    ctx.strokeStyle = isCur ? '#ff9d2e' : 'rgba(120,150,210,.9)';
+    ctx.lineWidth = 2 * DPR;
+    if (isOdd && !won) { ctx.shadowColor = 'rgba(255,217,138,.95)'; ctx.shadowBlur = 14 * DPR; }
+    ctx.arc(p[0], p[1], (isCur ? 11 : 9) * DPR, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+  });
+  /* 胜利时画出异兽 */
+  if (won) {
+    ctx.font = Math.round(cv.width * 0.3) + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.92;
+    ctx.fillText(L.emoji, cv.width / 2, cv.height / 2);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---------- 玩法 ---------- */
+function updateHUD() {
+  document.getElementById('lvNow').textContent = level + 1;
+  document.getElementById('lvAll').textContent = LEVELS.length;
+  document.getElementById('edgeNow').textContent = usedEdges.size;
+  document.getElementById('edgeAll').textContent = LEVELS[level].edges.length;
+  document.getElementById('scoreNow').textContent = score;
+  const L = LEVELS[level];
+  document.getElementById('beastName').textContent = '第' + (level + 1) + '图 · ' + L.name + ' ' + L.emoji;
+  renderScroll();
+}
+function renderScroll() {
+  const box = document.getElementById('beasts');
+  box.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const s = document.createElement('span');
+    s.textContent = L.emoji; s.title = L.name;
+    if (doneLevels.has(i)) s.className = 'on';
+    else if (i === level) s.className = 'cur';
+    box.appendChild(s);
+  });
+}
+function setHint(t) { document.getElementById('hint').textContent = t; }
+function loadLevel(i) {
+  level = i; path = []; usedEdges = new Set(); cur = -1; won = false;
+  document.getElementById('winbar').className = 'winbar';
+  setHint('从任意节点起笔 · 发光节点是推荐起点');
+  updateHUD(); draw();
+}
+function tryExtend(n) {
+  if (won || n === cur) return;
+  if (cur === -1) { cur = n; path = [n]; sfx.tap(); draw(); return; }
+  const k = ekey(cur, n);
+  if (LEVELS[level].edges.some(e => ekey(e[0], e[1]) === k) && !usedEdges.has(k)) {
+    usedEdges.add(k); path.push(n); cur = n; sfx.step();
+    if (usedEdges.size === LEVELS[level].edges.length) return winLevel();
+    if (!neighbors(cur).some(m => !usedEdges.has(ekey(cur, m)))) {
+      setHint('⚠ 这个节点走不下去了，撤销几步或重开吧'); sfx.bad();
+    } else setHint('');
+    updateHUD(); draw();
+  } else {
+    sfx.bad();
+  }
+}
+function winLevel() {
+  won = true;
+  doneLevels.add(level);
+  const gain = 100 + LEVELS[level].edges.length * 5;
+  score += gain;
+  if (score > best) { best = score; localStorage.setItem('gh_' + SLUG + '_best', best); }
+  sfx.win();
+  updateHUD(); draw();
+  if (level === LEVELS.length - 1) {
+    setTimeout(() => {
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('finalBest').textContent = best;
+      document.getElementById('endOv').classList.remove('hidden');
+    }, 650);
+  } else {
+    document.getElementById('winMsg').textContent = '✨ ' + LEVELS[level].name + ' 现形！+' + gain + ' 分';
+    document.getElementById('winbar').className = 'winbar show';
+  }
+}
+
+/* 指针：点击落笔 / 拖动连线 都支持 */
+function evPos(e) {
+  const r = cv.getBoundingClientRect();
+  return [(e.clientX - r.left) * DPR, (e.clientY - r.top) * DPR];
+}
+function nodeAt(pos) {
+  let bi = -1, bd = 26 * DPR;
+  LEVELS[level].pts.forEach((pt, i) => {
+    const p = P(i), d = Math.hypot(p[0] - pos[0], p[1] - pos[1]);
+    if (d < bd) { bd = d; bi = i; }
+  });
+  return bi;
+}
+let dragging = false;
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const n = nodeAt(evPos(e));
+  if (n >= 0) { dragging = true; tryExtend(n); }
+});
+cv.addEventListener('pointermove', e => {
+  if (!dragging || cur < 0) return;
+  const pos = evPos(e), n = nodeAt(pos);
+  if (n >= 0 && n !== cur) tryExtend(n);
+  else draw(pos);
+});
+window.addEventListener('pointerup', () => { dragging = false; draw(); });
+
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (won || path.length === 0) return;
+  if (path.length > 1) {
+    const b = path.pop(), a = path[path.length - 1];
+    usedEdges.delete(ekey(a, b)); cur = a;
+  } else { path = []; cur = -1; }
+  sfx.undo(); setHint(''); updateHUD(); draw();
+});
+document.getElementById('resetBtn').addEventListener('click', () => { if (!won) { loadLevel(level); sfx.undo(); } });
+document.getElementById('nextBtn').addEventListener('click', () => { sfx.good(); loadLevel(level + 1); });
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('startOv').classList.add('hidden');
+  sfx.good(); loadLevel(0);
+});
+document.getElementById('againBtn').addEventListener('click', () => {
+  document.getElementById('endOv').classList.add('hidden');
+  score = 0; doneLevels.clear(); sfx.good(); loadLevel(0);
+});
+
+document.getElementById('bestStart').textContent = '最高分：' + best;
+window.addEventListener('resize', fitCanvas);
+loadLevel(0);
+fitCanvas();
+</script>
+</body>
+</html>

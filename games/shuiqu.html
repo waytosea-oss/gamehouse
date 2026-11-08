@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>水渠工匠 · 游戏大厅</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#10231a;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#eafff2}
+body{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#app{max-width:480px;margin:0 auto;min-height:100vh;background:linear-gradient(180deg,#123324,#1a4630 55%,#0e2a1c);display:flex;flex-direction:column;position:relative;overflow:hidden}
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.25)}
+#topbar a{color:#a5e8bc;text-decoration:none;font-size:15px;font-weight:600}
+#topbar .tname{flex:1;text-align:center;font-size:17px;font-weight:700;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;font-size:17px;padding:4px 10px;cursor:pointer}
+#hud{display:flex;gap:8px;padding:10px 14px 4px}
+.hbox{flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(165,232,188,.35);border-radius:12px;padding:6px 4px;text-align:center}
+.hbox .lab{font-size:11px;color:#a5e8bc;letter-spacing:1px}
+.hbox .val{font-size:19px;font-weight:800;color:#d8ffe4}
+#hint{min-height:22px;text-align:center;font-size:13px;color:#b9f4cd;padding:5px 12px}
+#boardWrap{padding:4px 14px 10px}
+#board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:rgba(0,0,0,.35);border:2px solid rgba(165,232,188,.4);border-radius:14px;padding:6px}
+.cell{position:relative;aspect-ratio:1/1;border-radius:9px;background:linear-gradient(145deg,#6d4c2f,#59401f);cursor:pointer;overflow:hidden;box-shadow:inset 0 2px 5px rgba(0,0,0,.35)}
+.cell:nth-child(odd){background:linear-gradient(145deg,#75552f,#5f4423)}
+.cell .rot{position:absolute;inset:0;transition:transform .18s ease}
+.cell svg{width:100%;height:100%;display:block}
+.cell .pb{stroke:#77848f;stroke-width:30;fill:none;stroke-linecap:round}
+.cell .pf{stroke:#cfd9de;stroke-width:15;fill:none;stroke-linecap:round}
+.cell .hub{fill:#cfd9de}
+.cell.wet .pf{stroke:#42c2f5;stroke-dasharray:11 8;animation:flow .6s linear infinite}
+.cell.wet .hub{fill:#42c2f5}
+@keyframes flow{to{stroke-dashoffset:-19}}
+.cell.src{background:linear-gradient(145deg,#1565c0,#0d47a1);cursor:default}
+.cell.src .badge{font-size:19px}
+.cell.field{background:linear-gradient(145deg,#7a5a24,#66501f)}
+.cell.field.wet{background:linear-gradient(145deg,#43a047,#2e7d32);box-shadow:inset 0 0 0 2px #aeea00,0 0 12px rgba(124,179,66,.8)}
+.badge{position:absolute;right:1px;top:0;font-size:16px;z-index:3;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6));pointer-events:none}
+.srcLab{position:absolute;left:3px;bottom:1px;font-size:10px;color:#d6f0ff;z-index:3;pointer-events:none;font-weight:700}
+#bar{display:flex;gap:8px;padding:2px 14px 14px}
+#bar button{flex:1;padding:11px;border-radius:12px;border:1px solid rgba(165,232,188,.45);background:rgba(255,255,255,.08);color:#d8ffe4;font-size:15px;font-weight:700;cursor:pointer}
+#foot{padding:0 16px 16px;font-size:12px;color:#9fd8b2;text-align:center;line-height:1.8}
+.overlay{position:absolute;inset:0;background:rgba(4,20,12,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;z-index:10;text-align:center}
+.overlay.hidden{display:none}
+.overlay h1{font-size:32px;letter-spacing:3px;color:#8be09a;text-shadow:0 3px 0 #1b5e20;margin-bottom:12px}
+.overlay p{font-size:14.5px;line-height:1.85;color:#d9f5e0;max-width:330px}
+.overlay .big{margin-top:22px;background:linear-gradient(180deg,#66bb6a,#388e3c);color:#06280f;font-size:19px;font-weight:800;border:none;border-radius:999px;padding:13px 46px;cursor:pointer;box-shadow:0 6px 0 #1b5e20,0 10px 18px rgba(0,0,0,.4)}
+.overlay .big:active{transform:translateY(3px);box-shadow:0 3px 0 #1b5e20}
+.overlay .best{margin-top:16px;font-size:14px;color:#a5e8bc}
+.overlay .final{font-size:21px;color:#fff;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <a href="../index.html">← 大厅</a>
+    <div class="tname">🚰 水渠工匠</div>
+    <button id="muteBtn" aria-label="静音">🔊</button>
+  </div>
+  <div id="hud">
+    <div class="hbox"><div class="lab">关卡</div><div class="val"><span id="lv">1</span>/8</div></div>
+    <div class="hbox"><div class="lab">灌溉稻田</div><div class="val"><span id="wetN">0</span>/<span id="wetT">2</span></div></div>
+    <div class="hbox"><div class="lab">旋转</div><div class="val" id="rots">0</div></div>
+    <div class="hbox"><div class="lab">总分</div><div class="val" id="score">0</div></div>
+  </div>
+  <div id="hint">点管道旋转方向，把水从水源引到每一块稻田 🌾</div>
+  <div id="boardWrap"><div id="board"></div></div>
+  <div id="bar"><button id="redoBtn">⟳ 重开本关</button></div>
+  <div id="foot">都江堰的智慧：水渠纵横，旱涝皆收。<br>管道接通会亮起蓝水流，稻田喝到水就会变绿。</div>
+
+  <div id="startOverlay" class="overlay">
+    <h1>🚰 水渠工匠</h1>
+    <p>点击管道，把它转到正确的方向。<br>从蓝色水源出发，让水流接通每一块稻田。<br>共 8 关，转得越少，分越高！</p>
+    <button class="big" id="startBtn">开工修渠</button>
+    <div class="best">🏆 最高分：<span id="startBest">0</span></div>
+  </div>
+
+  <div id="midOverlay" class="overlay hidden">
+    <h1>💧 通水啦！</h1>
+    <p id="midText"></p>
+    <button class="big" id="nextBtn">下一关 →</button>
+  </div>
+
+  <div id="endOverlay" class="overlay hidden">
+    <h1>🌾 渠成丰年</h1>
+    <p>八条水渠全部竣工，稻田年年灌满！</p>
+    <div class="final">本局总分：<span id="endScore">0</span></div>
+    <div class="best">🏆 最高分：<span id="endBest">0</span></div>
+    <button class="big" id="againBtn">再来一局</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ---------- 极简 WebAudio 合成音效 ---------- */
+const Snd=(()=>{let ctx=null,muted=false;
+  function ac(){if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(ctx&&ctx.state==='suspended')ctx.resume();return ctx}
+  function tone(f,d,type,g,delay,slide){if(muted)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),gn=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);gn.gain.setValueAtTime(g||.15,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn);gn.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+  return{
+    click(){tone(580,.05,'triangle',.1)},
+    pling(){tone(880,.12,'sine',.14);tone(1318,.16,'sine',.1,.06)},
+    win(){[523,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.16,i*.11))},
+    get muted(){return muted},set muted(v){muted=v}
+  };})();
+
+/* ---------- 管道与关卡生成 ---------- */
+const N=6,DIRS=[[-1,0],[0,1],[1,0],[0,-1]],BITS=[1,2,4,8];
+const rotCW=m=>((m<<1)&15)|(m>>3);
+const rotN=(m,k)=>{let x=m;for(let i=0;i<k;i++)x=rotCW(x);return x};
+const popcnt=m=>{let n=0;for(let i=0;i<4;i++)if(m>>i&1)n++;return n};
+const $=id=>document.getElementById(id);
+const FIELDS_BY_LV=[2,2,3,3,3,4,4,4];
+let grid=[],level=1,total=0,rotations=0,fieldsTotal=0,fieldsWet=0,playing=false,levelDone=false;
+let best=+(localStorage.getItem('gh_shuiqu_best')||0);
+$('startBest').textContent=best;
+
+function pipePath(mask){
+  let d='';const E=[[50,6],[94,50],[50,94],[6,50]];
+  for(let i=0;i<4;i++)if(mask>>i&1)d+='M50 50 L'+E[i][0]+' '+E[i][1]+' ';
+  return d;
+}
+function genLevel(lv){
+  /* 随机生成树（保底可解）：从水源长出覆盖全图的管道网 */
+  const sol=Array.from({length:N},()=>Array(N).fill(0));
+  const seen=Array.from({length:N},()=>Array(N).fill(false));
+  const stack=[[2,0]];seen[2][0]=true;
+  while(stack.length){
+    const[r,c]=stack[stack.length-1];const opts=[];
+    for(let di=0;di<4;di++){const nr=r+DIRS[di][0],nc=c+DIRS[di][1];
+      if(nr>=0&&nr<N&&nc>=0&&nc<N&&!seen[nr][nc])opts.push([nr,nc,di])}
+    if(!opts.length){stack.pop();continue}
+    const[nr,nc,di]=opts[Math.random()*opts.length|0];
+    sol[r][c]|=BITS[di];sol[nr][nc]|=BITS[(di+2)%4];
+    seen[nr][nc]=true;stack.push([nr,nc]);
+  }
+  /* 稻田 = 末梢格，优先离水源远的 */
+  const dist=Array.from({length:N},()=>Array(N).fill(-1));dist[2][0]=0;
+  const q=[[2,0]];
+  while(q.length){const[r,c]=q.shift();for(let di=0;di<4;di++){if(!(sol[r][c]>>di&1))continue;
+    const nr=r+DIRS[di][0],nc=c+DIRS[di][1];if(dist[nr][nc]<0){dist[nr][nc]=dist[r][c]+1;q.push([nr,nc])}}}
+  let leaves=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(popcnt(sol[r][c])===1&&!(r===2&&c===0))leaves.push([r,c,dist[r][c]]);
+  leaves.sort((a,b)=>b[2]-a[2]);
+  const fN=Math.min(FIELDS_BY_LV[lv-1],leaves.length);
+  const fieldSet=new Set(leaves.slice(0,fN).map(([r,c])=>r+','+c));
+  /* 造型：规范底图 + 正确转角；再打乱（保证未解开且足够乱） */
+  grid=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const s=sol[r][c];let canon=s,canonRot=0;
+    for(let k=1;k<4;k++){const x=rotN(s,k);if(x<canon){canon=x;canonRot=k}}
+    const solRot=(4-canonRot)%4;
+    const kind=(r===2&&c===0)?'src':(fieldSet.has(r+','+c)?'field':'pipe');
+    grid.push({r,c,sol,canon,solRot,cur:kind==='src'?solRot:0,kind,wet:false,el:null,rotEl:null});
+  }
+  const tile=(r,c)=>grid[r*N+c];
+  for(const t of grid)if(t.kind!=='src')t.cur=Math.random()*4|0;
+  let guard=0;
+  while(guard++<60){
+    const{fw}=computeWet(tile);
+    let wrong=0;for(const t of grid)if(t.cur!==t.solRot)wrong++;
+    if(fw<fN&&wrong>=10)break;
+    const t=grid[Math.random()*grid.length|0];
+    if(t.kind!=='src')t.cur=(t.cur+1)%4;
+  }
+  fieldsTotal=fN;rotations=0;levelDone=false;
+  renderBoard(tile);updateFlow(tile,true);updHud();
+}
+function computeWet(tile){
+  const wet=Array.from({length:N},()=>Array(N).fill(false));
+  const curMask=t=>rotN(t.canon,t.cur);
+  wet[2][0]=true;const q=[[2,0]];let fw=0;
+  while(q.length){
+    const[r,c]=q.shift();const m=curMask(tile(r,c));
+    for(let di=0;di<4;di++){
+      if(!(m>>di&1))continue;
+      const nr=r+DIRS[di][0],nc=c+DIRS[di][1];
+      if(nr<0||nr>=N||nc<0||nc>=N||wet[nr][nc])continue;
+      if(curMask(tile(nr,nc))>>((di+2)%4)&1){wet[nr][nc]=true;q.push([nr,nc])}
+    }
+  }
+  for(const t of grid)if(t.kind==='field'&&wet[t.r][t.c])fw++;
+  return{wet,fw};
+}
+function renderBoard(tile){
+  const b=$('board');b.innerHTML='';
+  for(const t of grid){
+    const cell=document.createElement('div');cell.className='cell '+t.kind;
+    const d=pipePath(t.canon);
+    cell.innerHTML='<div class="rot"><svg viewBox="0 0 100 100"><path class="pb" d="'+d+'"/><path class="pf" d="'+d+'"/><circle class="hub" cx="50" cy="50" r="11"/></svg></div>'
+      +(t.kind==='src'?'<span class="badge">🚰</span><span class="srcLab">水源</span>':'')
+      +(t.kind==='field'?'<span class="badge">🌾</span>':'');
+    t.el=cell;t.rotEl=cell.querySelector('.rot');
+    t.rotEl.style.transform='rotate('+(t.cur*90)+'deg)';
+    cell.addEventListener('click',()=>onCell(t,tile));
+    b.appendChild(cell);
+  }
+}
+function updateFlow(tile,silent){
+  const{wet,fw}=computeWet(tile);
+  for(const t of grid){
+    const w=wet[t.r][t.c];
+    if(w&&!t.wet&&t.kind==='field'&&playing&&!silent)Snd.pling();
+    t.wet=w;t.el.classList.toggle('wet',w);
+  }
+  fieldsWet=fw;$('wetN').textContent=fw;
+  if(playing&&fw===fieldsTotal&&!levelDone)onSolve();
+}
+function onCell(t,tile){
+  if(!playing||levelDone)return;
+  if(t.kind==='src'){return}
+  t.cur=(t.cur+1)%4;rotations++;
+  t.rotEl.style.transform='rotate('+(t.cur*90)+'deg)';
+  Snd.click();$('rots').textContent=rotations;
+  updateFlow(tile,false);
+}
+function onSolve(){
+  levelDone=true;
+  const gain=Math.max(60,200+fieldsTotal*100-rotations*2);
+  total+=gain;
+  if(total>best){best=total;localStorage.setItem('gh_shuiqu_best',best)}
+  updHud();Snd.win();
+  setTimeout(()=>{
+    if(level>=8){$('endScore').textContent=total;$('endBest').textContent=best;$('endOverlay').classList.remove('hidden')}
+    else{$('midText').textContent='第 '+level+' 关通水！本关 +'+gain+' 分（共旋转 '+rotations+' 次）';$('midOverlay').classList.remove('hidden')}
+  },1000);
+}
+function updHud(){$('lv').textContent=level;$('wetT').textContent=fieldsTotal;$('rots').textContent=rotations;$('score').textContent=total}
+function startGame(){
+  level=1;total=0;playing=true;
+  $('startOverlay').classList.add('hidden');$('endOverlay').classList.add('hidden');$('midOverlay').classList.add('hidden');
+  genLevel(1);
+}
+$('startBtn').addEventListener('click',()=>{Snd.click();startGame()});
+$('againBtn').addEventListener('click',()=>{Snd.click();startGame()});
+$('nextBtn').addEventListener('click',()=>{Snd.click();level++;$('midOverlay').classList.add('hidden');genLevel(level)});
+$('redoBtn').addEventListener('click',()=>{if(!playing)return;Snd.click();genLevel(level)});
+$('muteBtn').addEventListener('click',()=>{Snd.muted=!Snd.muted;$('muteBtn').textContent=Snd.muted?'🔇':'🔊';if(!Snd.muted)Snd.click()});
+genLevel(1);
+</script>
+</body>
+</html>

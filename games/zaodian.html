@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>早点铺</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#191008;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+#wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#2e1c0b,#241505)}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.35)}
+#topbar a{color:#ffd98a;text-decoration:none;font-size:15px}
+#topbar .t{font-weight:700;font-size:17px;letter-spacing:2px}
+#muteBtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:4px 10px;font-size:16px;cursor:pointer}
+#hud{display:flex;justify-content:space-around;padding:8px 4px;background:rgba(0,0,0,.25);font-size:14px;flex-wrap:wrap;gap:4px}
+#hud b{color:#ffd34d}
+#timebar{height:8px;background:rgba(255,255,255,.14);margin:0 12px;border-radius:4px;overflow:hidden}
+#timefill{height:100%;background:linear-gradient(90deg,#ffb03a,#ff7847);width:100%}
+.sec{padding:8px 12px 2px;font-size:13px;color:#d8b98a;letter-spacing:1px}
+#custs{display:flex;gap:8px;padding:6px 12px;min-height:118px}
+.cust{flex:1;background:linear-gradient(170deg,#fff6e6,#ffe9c4);color:#5a3a10;border-radius:14px;padding:8px 6px;text-align:center;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.35);position:relative;border:2px solid transparent}
+.cust.ready{border-color:#3fbf5a;animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(63,191,90,.25)}}
+.cust .face{font-size:34px}
+.cust .order{font-size:21px;min-height:26px}
+.cust .pat{height:7px;background:#e8d5ae;border-radius:4px;overflow:hidden;margin-top:5px}
+.cust .pat i{display:block;height:100%;background:#57b84c}
+.cust.empty{display:flex;align-items:center;justify-content:center;color:#a98d5f;background:rgba(255,255,255,.06);border:1.5px dashed rgba(255,255,255,.25);cursor:default;box-shadow:none;font-size:13px}
+.shake{animation:shk .3s}
+@keyframes shk{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#stoves{display:flex;gap:8px;padding:6px 12px}
+.stove{flex:1;background:#3a2410;border:2px solid #6b4420;border-radius:12px;min-height:74px;text-align:center;padding:6px 2px;font-size:13px;color:#d8b98a}
+.stove .em{font-size:30px;display:block}
+.stove .pg{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;margin-top:4px}
+.stove .pg i{display:block;height:100%;background:#ffb03a;width:0%}
+.stove.done{border-color:#3fbf5a;color:#b6ffbe}
+#midrow{display:flex;gap:8px;padding:4px 12px}
+.box{flex:1;background:rgba(255,255,255,.07);border-radius:12px;padding:7px 9px;min-height:52px}
+.box .lb{font-size:12px;color:#d8b98a}
+.box .items{font-size:24px;min-height:30px}
+#btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 12px 16px}
+.rbtn{background:linear-gradient(180deg,#fff1d6,#ffd9a0);border:none;border-radius:12px;padding:9px 2px;font-size:14px;color:#5a3a10;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #b9822e}
+.rbtn:active{transform:translateY(2px);box-shadow:none}
+.rbtn small{display:block;font-weight:400;font-size:11px;color:#8a6a35}
+.rbtn.ing{background:linear-gradient(180deg,#e8f4ff,#c4e0ff);box-shadow:0 3px 0 #5b84b9;color:#173d5c}
+.rbtn.ing small{color:#4a6d94}
+.overlay{position:fixed;inset:0;background:rgba(12,7,2,.85);display:flex;align-items:center;justify-content:center;z-index:20}
+.card{background:linear-gradient(160deg,#4a2b0e,#2c1a07);border:2px solid #a06a28;border-radius:18px;padding:26px 22px;max-width:400px;width:88%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h1{font-size:29px;letter-spacing:3px;margin-bottom:8px}
+.card .em{font-size:50px;margin:4px 0}
+.card p{color:#f3dfba;font-size:15px;line-height:1.7;margin:6px 0}
+.card .best{color:#ffd34d;font-size:14px;margin-top:10px}
+.bigbtn{background:linear-gradient(180deg,#ffb03a,#f07f13);border:none;color:#4a1c00;font-weight:800;font-size:18px;padding:12px 32px;border-radius:999px;cursor:pointer;box-shadow:0 4px 14px rgba(240,127,19,.5);letter-spacing:1px}
+.bigbtn:active{transform:scale(.96)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><a href="../index.html">← 大厅</a><span class="t">🥟 早点铺</span><button id="muteBtn">🔊</button></div>
+  <div id="hud"><span>📅 第 <b id="hDay">1</b>/3 天</span><span>💰 今日 <b id="hCoin">0</b>/<span id="hGoal">60</span></span><span>⭐ 总分 <b id="hScore">0</b></span><span>😠 流失 <b id="hLost">0</b></span></div>
+  <div id="timebar"><div id="timefill"></div></div>
+  <div class="sec">👥 顾客（点单齐了点顾客上菜）</div>
+  <div id="custs"></div>
+  <div class="sec">🔥 灶台（3 口灶）</div>
+  <div id="stoves"></div>
+  <div id="midrow">
+    <div class="box"><div class="lb">🧺 备料台（面团＋肉馅 → 自动包成包子）</div><div class="items" id="prep"></div></div>
+    <div class="box"><div class="lb">🍽️ 备餐区（点食物可丢弃）</div><div class="items" id="tray"></div></div>
+  </div>
+  <div class="sec">👇 点单制作</div>
+  <div id="btns">
+    <button class="rbtn ing" data-ing="dough">🫓 面团<small>备料</small></button>
+    <button class="rbtn ing" data-ing="meat">🥩 肉馅<small>备料</small></button>
+    <button class="rbtn" data-cook="soy">🥛 豆浆<small>3 秒 · ¥4</small></button>
+    <button class="rbtn" data-cook="youtiao">🥖 油条<small>5 秒 · ¥6</small></button>
+    <button class="rbtn" data-cook="egg">🥚 茶叶蛋<small>4 秒 · ¥5</small></button>
+    <button class="rbtn" data-cook="zhou">🥣 粥<small>6 秒 · ¥7</small></button>
+  </div>
+</div>
+
+<div class="overlay" id="startOv">
+  <div class="card">
+    <div class="em">🥟</div>
+    <h1>早点铺</h1>
+    <p>看顾客点单，点下方按钮做餐：豆浆、油条、粥、茶叶蛋直接上灶；包子要先把🫓面团和🥩肉馅放到备料台，二合一包好自动上灶蒸。<br>做好自动进备餐区，点顾客即可上菜赚钱。一天营业 90 秒，3 天目标一天比一天高！</p>
+    <button class="bigbtn" id="startBtn">开张营业</button>
+    <div class="best">🏆 最高分：<span id="bestStart">0</span></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="dayOv">
+  <div class="card">
+    <div class="em">🌇</div>
+    <h1 id="dayTitle">打烊啦</h1>
+    <p id="dayText"></p>
+    <div style="margin-top:14px"><button class="bigbtn" id="nextDayBtn">开始新一天</button></div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="card">
+    <div class="em" id="endEm">🎉</div>
+    <h1 id="endTitle">早点大王！</h1>
+    <p id="endText"></p>
+    <p>本局得分 <b style="color:#ffd34d" id="endScore">0</b></p>
+    <div class="best">🏆 最高分：<span id="bestEnd">0</span></div>
+    <div style="margin-top:16px"><button class="bigbtn" id="againBtn">再开一局</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let AC=null, muted=false;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function beep(f,d,type,g,slideTo){ if(muted||!ac())return; const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+d); gn.gain.setValueAtTime(g||.13,t); gn.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t+d); }
+function sfx(n){ if(n==='click')beep(620,.05,'square',.07); else if(n==='cook')beep(440,.09,'triangle',.1,660); else if(n==='done'){beep(988,.1,'sine',.12);setTimeout(()=>beep(1319,.13,'sine',.12),80);} else if(n==='cash'){beep(1047,.07,'square',.09);setTimeout(()=>beep(1568,.14,'square',.09),60);} else if(n==='bad')beep(200,.16,'sawtooth',.11,120); else if(n==='bell')beep(1568,.2,'sine',.1,1200); }
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; this.textContent=muted?'🔇':'🔊'; });
+
+const SLUG='zaodian';
+const best=()=>+(localStorage.getItem('gh_'+SLUG+'_best')||0);
+document.getElementById('bestStart').textContent=best();
+const MENU={
+  baozi:{em:'🥟',name:'包子',price:8,cook:6},
+  soy:{em:'🥛',name:'豆浆',price:4,cook:3},
+  youtiao:{em:'🥖',name:'油条',price:6,cook:5},
+  egg:{em:'🥚',name:'茶叶蛋',price:5,cook:4},
+  zhou:{em:'🥣',name:'粥',price:7,cook:6}
+};
+const KEYS=Object.keys(MENU);
+const FACES=['😋','😊','🙂','😄','🧓','👵','👦','👩'];
+const GOALS=[60,95,140];
+let day, coinDay, score, lost, timeLeft, custs, stoves, prep, tray, spawnT, playing, timerId;
+
+function newCust(){
+  const nOrder=Math.random()<.45?2:1; const order=[];
+  for(let i=0;i<nOrder;i++)order.push(KEYS[Math.floor(Math.random()*KEYS.length)]);
+  return {face:FACES[Math.floor(Math.random()*FACES.length)], order, pat:100, patMax: 36-day*3};
+}
+function startGame(){
+  day=1; score=0; lost=0;
+  document.getElementById('startOv').classList.add('hide');
+  document.getElementById('endOv').classList.add('hide');
+  startDay();
+}
+function startDay(){
+  coinDay=0; timeLeft=90; custs=[null,null,null]; stoves=[null,null,null]; prep=[]; tray=[]; spawnT=0.5;
+  document.getElementById('dayOv').classList.add('hide');
+  playing=true; render(); updHud();
+  if(timerId)clearInterval(timerId);
+  timerId=setInterval(tick,100);
+}
+function freeStove(){ return stoves.indexOf(null); }
+function startCook(key){
+  const i=freeStove(); if(i<0){ sfx('bad'); return; }
+  stoves[i]={key, t:0, total:MENU[key].cook, done:false};
+  sfx('cook'); render();
+}
+function addIng(kind){
+  if(prep.length>=2){ sfx('bad'); return; }
+  prep.push(kind); sfx('click');
+  if(prep.includes('dough')&&prep.includes('meat')){
+    if(freeStove()>=0){ prep=[]; setTimeout(()=>startCook('baozi'),250); }
+  }
+  render();
+}
+function serve(ci){
+  const c=custs[ci]; if(!c)return;
+  const need=c.order.slice(); const have=tray.slice();
+  for(const k of need){ const ix=have.indexOf(k); if(ix<0){ const el=document.querySelectorAll('.cust')[ci]; if(el){el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');} sfx('bad'); return; } have.splice(ix,1); }
+  tray=have;
+  let pay=need.reduce((s,k)=>s+MENU[k].price,0);
+  if(c.pat>55)pay+=2;
+  coinDay+=pay; score+=pay; custs[ci]=null; sfx('cash'); render(); updHud();
+}
+function tick(){
+  if(!playing)return;
+  const dt=.1;
+  timeLeft-=dt;
+  document.getElementById('timefill').style.width=Math.max(0,timeLeft/90*100)+'%';
+  if(timeLeft<=0){ endDay(); return; }
+  spawnT-=dt;
+  if(spawnT<=0){ const free=custs.indexOf(null); if(free>=0){ custs[free]=newCust(); sfx('bell'); render(); } spawnT=Math.max(3.4, 6.8-day*.7)+Math.random()*2; }
+  let dirty=false;
+  stoves.forEach((s,i)=>{ if(s&&!s.done){ s.t+=dt; if(s.t>=s.total){ s.done=true; sfx('done'); if(tray.length<6){ tray.push(s.key); stoves[i]=null; } } dirty=true; } });
+  custs.forEach((c,i)=>{ if(c){ c.pat-=dt/c.patMax*100; if(c.pat<=0){ custs[i]=null; lost++; coinDay=Math.max(0,coinDay-3); sfx('bad'); dirty=true; updHud(); } } });
+  if(dirty)render();
+  else { /* 只刷新耐心条与就绪状态 */
+    document.querySelectorAll('.cust').forEach((el,j)=>{ const c=custs[j]; if(!c)return; const bar=el.querySelector('.pat i'); if(bar)bar.style.width=Math.max(0,c.pat)+'%'; el.classList.toggle('ready', orderReady(c)); });
+    document.querySelectorAll('.stove .pg i').forEach((el,j)=>{ const s=stoves[j]; if(s)el.style.width=Math.min(100,s.t/s.total*100)+'%'; });
+  }
+}
+function orderReady(c){ const have=tray.slice(); for(const k of c.order){ const ix=have.indexOf(k); if(ix<0)return false; have.splice(ix,1);} return true; }
+function endDay(){
+  playing=false; clearInterval(timerId);
+  const ok=coinDay>=GOALS[day-1];
+  if(day>=3||!ok){ endGame(ok&&day>=3); return; }
+  document.getElementById('dayTitle').textContent='第 '+day+' 天打烊';
+  document.getElementById('dayText').textContent='今日收入 ¥'+coinDay+'，目标 ¥'+GOALS[day-1]+' —— 达成了！明天目标 ¥'+GOALS[day]+'，顾客会更多、耐心更少，加油！';
+  document.getElementById('dayOv').classList.remove('hide');
+  sfx('done');
+}
+function endGame(win){
+  playing=false; clearInterval(timerId);
+  const b=best(); if(score>b)localStorage.setItem('gh_'+SLUG+'_best',score);
+  document.getElementById('endEm').textContent=win?'👑':'🌧️';
+  document.getElementById('endTitle').textContent=win?'早点大王！':'铺子打烊了';
+  document.getElementById('endText').textContent=win?('三天全部达标，街坊都认你家包子！共流失 '+lost+' 位顾客。'):('第 '+day+' 天收入 ¥'+coinDay+'，没达到 ¥'+GOALS[day-1]+' 的目标。再练练手速吧！');
+  document.getElementById('endScore').textContent=score;
+  document.getElementById('bestEnd').textContent=best();
+  document.getElementById('endOv').classList.remove('hide');
+  sfx(win?'cash':'bad');
+}
+function updHud(){
+  document.getElementById('hDay').textContent=day;
+  document.getElementById('hCoin').textContent=coinDay;
+  document.getElementById('hGoal').textContent=GOALS[day-1];
+  document.getElementById('hScore').textContent=score;
+  document.getElementById('hLost').textContent=lost;
+}
+function render(){
+  const cw=document.getElementById('custs'); cw.innerHTML='';
+  custs.forEach((c,i)=>{ const d=document.createElement('div');
+    if(!c){ d.className='cust empty'; d.textContent='等客来…'; }
+    else { d.className='cust'+(orderReady(c)?' ready':'');
+      d.innerHTML='<div class="face">'+c.face+'</div><div class="order">'+c.order.map(k=>MENU[k].em).join('')+'</div><div class="pat"><i style="width:'+Math.max(0,c.pat)+'%"></i></div>';
+      d.addEventListener('click',()=>serve(i)); }
+    cw.appendChild(d); });
+  const sw=document.getElementById('stoves'); sw.innerHTML='';
+  stoves.forEach(s=>{ const d=document.createElement('div'); d.className='stove'+(s&&s.done?' done':'');
+    if(!s)d.innerHTML='<span class="em">🕳️</span>空灶';
+    else if(s.done){ d.innerHTML='<span class="em">'+MENU[s.key].em+'</span>'+MENU[s.key].name+' 好了！'; d.addEventListener('click',()=>{ if(tray.length<6){ tray.push(s.key); stoves[stoves.indexOf(s)]=null; sfx('click'); render(); } }); }
+    else d.innerHTML='<span class="em">'+MENU[s.key].em+'</span>'+MENU[s.key].name+'<div class="pg"><i style="width:'+(s.t/s.total*100)+'%"></i></div>';
+    sw.appendChild(d); });
+  document.getElementById('prep').textContent=prep.map(k=>k==='dough'?'🫓':'🥩').join(' ');
+  const tw=document.getElementById('tray'); tw.innerHTML='';
+  tray.forEach((k,i)=>{ const s=document.createElement('span'); s.textContent=MENU[k].em; s.style.cursor='pointer'; s.title=MENU[k].name; s.addEventListener('click',()=>{ tray.splice(i,1); sfx('click'); render(); }); tw.appendChild(s); });
+  updHud();
+}
+document.querySelectorAll('[data-cook]').forEach(b=>b.addEventListener('click',()=>startCook(b.dataset.cook)));
+document.querySelectorAll('[data-ing]').forEach(b=>b.addEventListener('click',()=>addIng(b.dataset.ing)));
+document.getElementById('nextDayBtn').addEventListener('click',()=>{ day++; sfx('click'); startDay(); });
+document.getElementById('startBtn').addEventListener('click',()=>{ ac(); sfx('click'); startGame(); });
+document.getElementById('againBtn').addEventListener('click',()=>{ sfx('click'); startGame(); });
+/* 初始 */
+day=1; coinDay=0; score=0; lost=0; custs=[null,null,null]; stoves=[null,null,null]; prep=[]; tray=[]; render();
+</script>
+</body>
+</html>

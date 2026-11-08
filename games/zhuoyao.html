@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>捉妖格 · 游戏大厅</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#141b31,#0a0e1a);color:#e8ecf4;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:10px 12px 30px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 10px}
+.topbar a{color:#9fc3ff;text-decoration:none;font-size:15px}
+.tname{font-size:18px;font-weight:700;letter-spacing:2px}
+#muteBtn{background:#22304d;border:1px solid #37507e;color:#fff;border-radius:10px;padding:5px 10px;font-size:15px;cursor:pointer}
+.hud{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.chip{background:#1b2742;border:1px solid #2d4066;border-radius:10px;padding:5px 9px;font-size:13px}
+.diffrow{display:flex;gap:8px;margin:8px 0}
+.dbtn{flex:1;background:#22304d;border:1px solid #37507e;color:#cfe0ff;border-radius:10px;padding:8px 0;font-size:14px;cursor:pointer}
+.dbtn.on{background:#3d6ac2;border-color:#7aa5ff;color:#fff;font-weight:700}
+#clues{background:#17223c;border:1px solid #2d4066;border-radius:12px;padding:9px 12px;font-size:13.5px;line-height:1.75;margin-bottom:10px;min-height:44px}
+#clues b{color:#ffd97a}
+.board{display:grid;gap:4px;margin:0 auto;max-width:430px}
+.cell{aspect-ratio:1;border-radius:9px;border:1px solid #33477a;background:linear-gradient(180deg,#26355e,#1a2547);display:flex;align-items:center;justify-content:center;font-size:clamp(15px,5.6vw,25px);cursor:pointer;user-select:none;position:relative}
+.cell.water{background:linear-gradient(180deg,#15507e,#0e3358);cursor:default;border-color:#1d5c8f}
+.cell.hit{background:linear-gradient(180deg,#6b3016,#452210);border-color:#b06a30}
+.cell.empty{background:#131b31;color:#54678c;cursor:default}
+.cell .nm{position:absolute;bottom:0;left:0;right:0;font-size:9px;color:#ffcf9a;text-align:center;line-height:1.2}
+.cnt{display:flex;align-items:center;justify-content:center;font-size:13px;color:#8fb4ff;font-weight:700}
+#msg{min-height:22px;text-align:center;color:#ffd97a;font-size:14px;margin:9px 0 7px}
+.modebar{display:flex;gap:8px}
+.mbtn{flex:1;border-radius:10px;padding:9px 0;font-size:15px;border:1px solid #37507e;background:#22304d;color:#cfe0ff;cursor:pointer}
+.mbtn.on{background:#a8731c;border-color:#ffd97a;color:#fff;font-weight:700}
+.ov{position:fixed;inset:0;background:rgba(5,8,16,.85);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.ov .card{width:min(88vw,380px);background:linear-gradient(180deg,#1e2b4d,#141d36);border:1px solid #3a548c;border-radius:18px;padding:26px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.ov h1{margin:0 0 8px;font-size:27px;letter-spacing:3px}
+.ov p{color:#b9c8e8;font-size:14px;line-height:1.8;margin:6px 0}
+.bigbtn{background:linear-gradient(180deg,#ffb340,#f08c1a);border:none;color:#3a2200;font-size:18px;font-weight:800;border-radius:12px;padding:12px 34px;margin-top:12px;cursor:pointer}
+.hidden{display:none!important}
+.best{color:#ffd97a;font-size:14px;margin-top:10px}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="topbar"><a href="../index.html">← 大厅</a><span class="tname">🔮 捉妖格</span><button id="muteBtn">🔊</button></div>
+  <div class="hud"><span class="chip" id="heartChip">❤️❤️❤️</span><span class="chip" id="catchChip">已捉 0/5</span><span class="chip" id="flagChip">🚩 0</span><span class="chip" id="scoreChip">得分 0</span></div>
+  <div class="diffrow"><button class="dbtn on" data-d="easy">简单 5×5</button><button class="dbtn" data-d="hard">困难 6×6</button><button class="dbtn" data-d="daily">📅 每日一案</button></div>
+  <div id="clues">线索加载中…</div>
+  <div class="board" id="board"></div>
+  <div id="msg">结合行列数字与线索，点格捉妖。</div>
+  <div class="modebar"><button class="mbtn on" id="modeCatch">👆 捉妖</button><button class="mbtn" id="modeFlag">🚩 插旗</button></div>
+</div>
+
+<div class="ov" id="startOv"><div class="card">
+  <h1>🔮 捉妖格</h1>
+  <p>格子四周的数字，是每行每列藏着的妖怪数。<br>再读《山海经》式线索——谁挨着水、谁躲在角落，<br>推理出每只妖的位置，点格捉它！</p>
+  <p>捉错 3 次失败；插旗可以标记嫌疑格。</p>
+  <button class="bigbtn" id="startBtn">开始捉妖</button>
+  <div class="best" id="bestStart">最高分：0</div>
+</div></div>
+
+<div class="ov hidden" id="endOv"><div class="card">
+  <h1 id="endTitle">🎉 捉妖成功</h1>
+  <p id="endText"></p>
+  <button class="bigbtn" id="againBtn">再来一局</button>
+  <div class="best" id="bestEnd">最高分：0</div>
+</div></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let AC=null,muted=false;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function tone(f,d,type,v,delay){if(muted)return;const c=ac();if(!c)return;const t=c.currentTime+(delay||0);const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||0.14,t);g.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.12));o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+(d||0.12)+0.03);}
+function sfx(n){if(n==='click')tone(620,0.06,'square',0.07);else if(n==='good'){tone(880,0.1,'sine',0.16);tone(1318,0.14,'sine',0.14,0.07);}else if(n==='bad')tone(150,0.22,'sawtooth',0.14);else if(n==='flag')tone(440,0.07,'triangle',0.1);else if(n==='win'){[523,659,784,1046].forEach((f,i)=>tone(f,0.16,'triangle',0.15,i*0.09));}else if(n==='lose'){[400,320,240,170].forEach((f,i)=>tone(f,0.18,'sawtooth',0.1,i*0.1));}}
+$('muteBtn').onclick=()=>{muted=!muted;$('muteBtn').textContent=muted?'🔇':'🔊';if(!muted)sfx('click');};
+
+const NAMES=[['九尾狐','🦊'],['穷奇','🐯'],['毕方','🦜'],['饕餮','👹'],['混沌','🌀'],['梼杌','🐗'],['烛龙','🐉'],['夔','🐂']];
+const BESTK='gh_zhuoyao_best';
+let best=+(localStorage.getItem(BESTK)||0);
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(a,rnd){for(let i=a.length-1;i>0;i--){const j=(rnd()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function nbrs(c,N){const r=(c/N)|0,co=c%N,out=[];if(r>0)out.push(c-N);if(r<N-1)out.push(c+N);if(co>0)out.push(c-1);if(co<N-1)out.push(c+1);return out;}
+
+function unaryOk(cl,c,N,water){
+  const r=(c/N)|0,co=c%N;
+  switch(cl.kind){
+    case 'adjW':return nbrs(c,N).some(n=>water.has(n));
+    case 'farW':return !nbrs(c,N).some(n=>water.has(n));
+    case 'corner':return (r===0||r===N-1)&&(co===0||co===N-1);
+    case 'edge':return r===0||co===0||r===N-1||co===N-1;
+    case 'inner':return r>0&&co>0&&r<N-1&&co<N-1;
+    case 'notRow':return r!==cl.r;
+    case 'notCol':return co!==cl.c;
+  }
+  return true;
+}
+function pairOk(cl,c1,c2,N){
+  const r1=(c1/N)|0,co1=c1%N,r2=(c2/N)|0,co2=c2%N;
+  if(cl.kind==='adj')return Math.abs(r1-r2)+Math.abs(co1-co2)===1;
+  if(cl.kind==='sameRow')return r1===r2;
+  if(cl.kind==='sameCol')return co1===co2;
+  return true;
+}
+function countSolutions(N,water,rows,cols,names,clues){
+  const dom={};
+  names.forEach(nm=>{dom[nm]=[];for(let c=0;c<N*N;c++)if(!water.has(c))dom[nm].push(c);});
+  const pair=[];
+  for(const cl of clues){
+    if(cl.kind==='adj'||cl.kind==='sameRow'||cl.kind==='sameCol'){pair.push(cl);continue;}
+    dom[cl.name]=dom[cl.name].filter(c=>unaryOk(cl,c,N,water));
+  }
+  const order=names.slice().sort((a,b)=>dom[a].length-dom[b].length);
+  let count=0;const used=new Set(),rc=new Array(N).fill(0),cc=new Array(N).fill(0),pos={};
+  (function bt(i){
+    if(count>=2)return;
+    if(i===order.length){count++;return;}
+    const nm=order[i];
+    for(const c of dom[nm]){
+      if(used.has(c))continue;
+      const r=(c/N)|0,co=c%N;
+      if(rc[r]>=rows[r]||cc[co]>=cols[co])continue;
+      let ok=true;
+      for(const cl of pair){
+        if(cl.a===nm&&pos[cl.b]!==undefined&&!pairOk(cl,c,pos[cl.b],N)){ok=false;break;}
+        if(cl.b===nm&&pos[cl.a]!==undefined&&!pairOk(cl,c,pos[cl.a],N)){ok=false;break;}
+      }
+      if(!ok)continue;
+      used.add(c);rc[r]++;cc[co]++;pos[nm]=c;
+      bt(i+1);
+      used.delete(c);rc[r]--;cc[co]--;delete pos[nm];
+      if(count>=2)return;
+    }
+  })(0);
+  return count;
+}
+function buildTruths(demons,water,N,rnd){
+  const list=[];
+  for(const d of demons){
+    const r=(d.cell/N)|0,co=d.cell%N;
+    if(nbrs(d.cell,N).some(n=>water.has(n)))list.push({kind:'adjW',name:d.name,text:'「'+d.name+'」挨着水边'});
+    else list.push({kind:'farW',name:d.name,text:'「'+d.name+'」远离水边'});
+    const corner=(r===0||r===N-1)&&(co===0||co===N-1),edge=r===0||co===0||r===N-1||co===N-1;
+    if(corner)list.push({kind:'corner',name:d.name,text:'「'+d.name+'」躲在角落里'});
+    else if(edge)list.push({kind:'edge',name:d.name,text:'「'+d.name+'」贴着边界'});
+    else list.push({kind:'inner',name:d.name,text:'「'+d.name+'」藏在腹地'});
+    const rr=(rnd()*N)|0;if(rr!==r)list.push({kind:'notRow',name:d.name,r:rr,text:'「'+d.name+'」不在第'+(rr+1)+'行'});
+    const cc2=(rnd()*N)|0;if(cc2!==co)list.push({kind:'notCol',name:d.name,c:cc2,text:'「'+d.name+'」不在第'+(cc2+1)+'列'});
+  }
+  for(let i=0;i<demons.length;i++)for(let j=i+1;j<demons.length;j++){
+    const a=demons[i],b=demons[j],r1=(a.cell/N)|0,c1=a.cell%N,r2=(b.cell/N)|0,c2=b.cell%N;
+    if(Math.abs(r1-r2)+Math.abs(c1-c2)===1)list.push({kind:'adj',a:a.name,b:b.name,text:'「'+a.name+'」与「'+b.name+'」相邻'});
+    else if(r1===r2)list.push({kind:'sameRow',a:a.name,b:b.name,text:'「'+a.name+'」与「'+b.name+'」同一行'});
+    else if(c1===c2)list.push({kind:'sameCol',a:a.name,b:b.name,text:'「'+a.name+'」与「'+b.name+'」同一列'});
+  }
+  return list;
+}
+function genPuzzle(seed,N,K,W){
+  const rnd=mulberry(seed);
+  for(let attempt=0;attempt<300;attempt++){
+    const cells=shuffle(Array.from({length:N*N},(_,i)=>i),rnd);
+    const water=new Set(cells.slice(0,W));
+    const demonCells=cells.slice(W,W+K);
+    const pool=shuffle(NAMES.slice(),rnd).slice(0,K);
+    const demons=demonCells.map((c,i)=>({cell:c,name:pool[i][0],emoji:pool[i][1]}));
+    const rows=new Array(N).fill(0),cols=new Array(N).fill(0);
+    demons.forEach(d=>{rows[(d.cell/N)|0]++;cols[d.cell%N]++;});
+    const names=demons.map(d=>d.name);
+    const truths=shuffle(buildTruths(demons,water,N,rnd),rnd);
+    const clues=[];
+    let ti=0;
+    while(ti<Math.min(2,truths.length))clues.push(truths[ti++]);
+    let sol=countSolutions(N,water,rows,cols,names,clues);
+    while(sol!==1&&ti<truths.length&&clues.length<7){
+      clues.push(truths[ti++]);
+      sol=countSolutions(N,water,rows,cols,names,clues);
+    }
+    if(sol===1)return{N,K,water,demons,rows,cols,clues};
+  }
+  return null;
+}
+
+let diff='easy',mode='catch',G=null,playing=false;
+const CONF={easy:{N:5,K:5,W:3},hard:{N:6,K:7,W:4}};
+function todaySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function newGame(){
+  let seed,cfg;
+  if(diff==='daily'){cfg=CONF.easy;seed=todaySeed();}
+  else{cfg=CONF[diff];seed=(Date.now()^((Math.random()*1e9)|0))>>>0;}
+  const pz=genPuzzle(seed,cfg.N,cfg.K,cfg.W);
+  if(!pz){$('msg').textContent='出题失败，再点一次难度试试。';return;}
+  G={pz,caught:new Set(),flags:new Set(),empty:new Set(),hearts:3,score:0,over:false};
+  playing=true;
+  renderAll();
+  $('msg').textContent=diff==='daily'?'今日一案：'+pz.K+' 只妖，线索已给全。':'新案子：'+pz.K+' 只妖藏在格子里。';
+}
+function renderAll(){
+  const pz=G.pz,N=pz.N;
+  $('clues').innerHTML='<b>📜 线索</b>（行列数字＝该行列妖怪数）<br>'+pz.clues.map(c=>'· '+c.text).join('<br>');
+  const bd=$('board');bd.style.gridTemplateColumns='repeat('+(N+1)+',1fr)';bd.innerHTML='';
+  const corner=document.createElement('div');bd.appendChild(corner);
+  for(let c=0;c<N;c++){const d=document.createElement('div');d.className='cnt';d.textContent=pz.cols[c];bd.appendChild(d);}
+  const demonAt={};pz.demons.forEach(d=>{demonAt[d.cell]=d;});
+  for(let r=0;r<N;r++){
+    for(let c=0;c<N;c++){
+      const cell=r*N+c,d=document.createElement('div');
+      if(pz.water.has(cell)){d.className='cell water';d.textContent='🌊';}
+      else if(G.caught.has(cell)){const dm=demonAt[cell];d.className='cell hit';d.innerHTML=dm.emoji+'<span class="nm">'+dm.name+'</span>';}
+      else if(G.empty.has(cell)){d.className='cell empty';d.textContent='·';}
+      else{d.className='cell';d.textContent=G.flags.has(cell)?'🚩':'';d.onclick=()=>tapCell(cell);}
+      bd.appendChild(d);
+    }
+    const rc=document.createElement('div');rc.className='cnt';rc.textContent=pz.rows[r];bd.appendChild(rc);
+  }
+  $('heartChip').textContent='❤️'.repeat(G.hearts)+'🖤'.repeat(3-G.hearts);
+  $('catchChip').textContent='已捉 '+G.caught.size+'/'+pz.K;
+  $('flagChip').textContent='🚩 '+G.flags.size;
+  $('scoreChip').textContent='得分 '+G.score;
+}
+function tapCell(cell){
+  if(!playing||G.over)return;
+  if(mode==='flag'){
+    if(G.flags.has(cell))G.flags.delete(cell);else G.flags.add(cell);
+    sfx('flag');renderAll();return;
+  }
+  const dm=G.pz.demons.find(d=>d.cell===cell);
+  G.flags.delete(cell);
+  if(dm){
+    G.caught.add(cell);G.score+=100;sfx('good');
+    $('msg').textContent='捉到「'+dm.name+'」！+100';
+    if(G.caught.size===G.pz.K){G.score+=G.hearts*50;endGame(true);renderAll();return;}
+  }else{
+    G.empty.add(cell);G.hearts--;sfx('bad');
+    $('msg').textContent='扑空了！这格没有妖。';
+    if(G.hearts<=0){endGame(false);renderAll();return;}
+  }
+  renderAll();
+}
+function endGame(win){
+  G.over=true;playing=false;
+  if(G.score>best){best=G.score;localStorage.setItem(BESTK,best);}
+  sfx(win?'win':'lose');
+  $('endTitle').textContent=win?'🎉 捉妖成功':'💨 妖气冲散了';
+  $('endText').innerHTML=(win?'全员落网！':'只捉到 '+G.caught.size+'/'+G.pz.K+' 只。')+'<br>本局得分 <b style="color:#ffd97a">'+G.score+'</b>';
+  $('bestEnd').textContent='最高分：'+best;
+  $('endOv').classList.remove('hidden');
+}
+document.querySelectorAll('.dbtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.dbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');diff=b.dataset.d;sfx('click');newGame();};});
+$('modeCatch').onclick=()=>{mode='catch';$('modeCatch').classList.add('on');$('modeFlag').classList.remove('on');sfx('click');};
+$('modeFlag').onclick=()=>{mode='flag';$('modeFlag').classList.add('on');$('modeCatch').classList.remove('on');sfx('click');};
+$('startBtn').onclick=()=>{$('startOv').classList.add('hidden');sfx('good');newGame();};
+$('againBtn').onclick=()=>{$('endOv').classList.add('hidden');sfx('click');newGame();};
+$('bestStart').textContent='最高分：'+best;
+newGame();playing=false;
+</script>
+</body></html>
