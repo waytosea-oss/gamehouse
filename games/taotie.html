@@ -37,6 +37,34 @@
   .toast { position:fixed; left:50%; top:15%; transform:translateX(-50%); background:rgba(20,10,40,.92); border:1px solid rgba(255,216,115,.6); color:#ffe9ad; padding:9px 18px; border-radius:999px; font-size:14px; z-index:60; opacity:0; pointer-events:none; transition:opacity .25s; white-space:nowrap; }
   .toast.show { opacity:1; }
 </style>
+<style data-gh-theme>
+body{background-color:#0c130e;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a86a' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath d='M20 96a16 16 0 1 1 16 16'/%3E%3Cpath d='M28 96a8 8 0 1 0 8 8'/%3E%3Cpath d='M84 40a16 16 0 1 1 16 16'/%3E%3Cpath d='M92 40a8 8 0 1 0 8 8'/%3E%3Cpath d='M108 116a12 12 0 1 1 12 12'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#16241b 0%,#0c130e 100%);background-size:144px 144px,cover;color:#ddd3c0}
+.topbar{background:rgba(10,16,11,.88);border-bottom:1px solid rgba(201,168,106,.5);border-radius:0 0 10px 10px}
+.topbar a{color:#e8c87a;background:rgba(26,36,28,.9);border:1px solid #c9a86a}
+.topbar .tname{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+#muteBtn{background:rgba(26,36,28,.9);border:1px solid #c9a86a;color:#e8c87a}
+.hud .cell{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10);color:#a99f88}
+.hud .cell b{color:#e8c87a}
+.hud .cell b.warn{color:#c14e32}
+#stomachBar{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10)}
+#stomachBar .lbl{color:#a99f88}
+#stomachTip{color:#a99f88}
+.slot{border:2px dashed rgba(201,168,106,.6)}
+.slot.full{background:rgba(201,168,106,.15)}
+#cvWrap{border:1px solid rgba(201,168,106,.55);border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+canvas{background:radial-gradient(ellipse at 50% 42%, #2c3a26 0%, #1a2617 55%, #0d130c 100%);border:1px solid rgba(201,168,106,.55);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.overlay{background:rgba(5,9,6,.88);backdrop-filter:blur(3px)}
+.card{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10)}
+.card h1{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+.card p{color:#ddd3c0}
+.card .best{color:#e8c87a}
+.card .score{color:#e8c87a}
+.card .bigbtn{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.toast{background:rgba(26,36,28,.94);border:1px solid #c9a86a;color:#e8c87a;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10)}
+.gh-art{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(201,168,106,.65);margin-bottom:12px;display:block}
+.gh-art-sprite{display:block;height:150px;width:auto;max-width:82%;object-fit:contain;margin:0 auto 10px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
+.card .big{display:none}
+</style>
 </head>
 <body>
 <div id="app">
@@ -67,6 +95,7 @@
 
 <div class="overlay" id="startScr">
   <div class="card">
+    <img class="gh-art-sprite" src="../assets/taotie.png" alt="">
     <div class="big">👹</div>
     <h1>饕餮吞天</h1>
     <p>· 按住拖动饕餮，吞掉比它小的食物（键盘方向键也能走）。<br>

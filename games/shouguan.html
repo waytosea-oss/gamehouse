@@ -34,6 +34,34 @@ body{background:#10131f;font-family:-apple-system,"PingFang SC","Microsoft YaHei
 .card .best{color:#ffd34d;font-size:14px;margin-top:10px}
 .hide{display:none!important}
 </style>
+<style data-gh-theme>
+body{background-color:#0c130e;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a86a' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath d='M20 96a16 16 0 1 1 16 16'/%3E%3Cpath d='M28 96a8 8 0 1 0 8 8'/%3E%3Cpath d='M84 40a16 16 0 1 1 16 16'/%3E%3Cpath d='M92 40a8 8 0 1 0 8 8'/%3E%3Cpath d='M108 116a12 12 0 1 1 12 12'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#16241b 0%,#0c130e 100%);background-size:144px 144px,cover;color:#ddd3c0}
+#wrap{background:#0c130e}
+#topbar{background:rgba(10,16,11,.88);border-bottom:1px solid rgba(201,168,106,.5)}
+#topbar a{color:#e8c87a}
+#topbar .t{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+#muteBtn{background:rgba(26,36,28,.9);border:1px solid #c9a86a;color:#e8c87a}
+#hud{background:rgba(26,36,28,.94);border-bottom:1px solid rgba(201,168,106,.5);color:#ddd3c0}
+#hud b{color:#e8c87a}
+#cv{border:1px solid rgba(201,168,106,.55);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+#tip{color:#a99f88}
+.tbtn{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10);color:#ddd3c0}
+.tbtn small{color:#a99f88}
+.tbtn.sel{border-color:#e8c87a;box-shadow:0 0 0 1px #e8c87a,0 0 16px rgba(232,200,122,.35),0 12px 32px rgba(0,0,0,.5)}
+.tbtn img{object-fit:cover}
+#panel{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10);color:#ddd3c0}
+#panel button{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+#panel button.gray{background:rgba(12,19,14,.6);border:1px solid #c9a86a;color:#e8c87a;border-radius:10px;box-shadow:none}
+.overlay{background:rgba(5,9,6,.88);backdrop-filter:blur(3px)}
+.card{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(232,200,122,.15),0 0 16px rgba(201,168,106,.10)}
+.card h1{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+.card p{color:#ddd3c0}
+.card .best{color:#e8c87a}
+.bigbtn{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.gh-art{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(201,168,106,.65);margin-bottom:12px;display:block}
+.gh-art-sprite{display:block;height:150px;width:auto;max-width:82%;object-fit:contain;margin:0 auto 10px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
+.card .em{display:none}
+</style>
 </head>
 <body>
 <div id="wrap">
@@ -52,6 +80,7 @@ body{background:#10131f;font-family:-apple-system,"PingFang SC","Microsoft YaHei
 
 <div class="overlay" id="startOv">
   <div class="card">
+    <img class="gh-art-sprite" src="../assets/tower_lion.png" alt="">
     <div class="em">🏯</div>
     <h1>山海守关</h1>
     <p>妖兽沿山道冲向城门！选异兽塔点空格布防：狻猊近战、毕方远程、鲲鹏减速。<br><b style="color:#ffd34d">相邻放同族塔会结成羁绊，攻击 +10%</b>，地图上会亮起金线。<br>点已建的塔可以升级或出售。守住 12 波进攻即胜，城门血量归零则败。</p>

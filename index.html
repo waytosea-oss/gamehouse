@@ -8,56 +8,66 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(180deg, #141b3d 0%, #1d1440 55%, #2a1030 100%);
-    color:#f2ead8; min-height:100vh;
+    background-color:#0c130e;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a86a' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath d='M20 96a16 16 0 1 1 16 16'/%3E%3Cpath d='M28 96a8 8 0 1 0 8 8'/%3E%3Cpath d='M84 40a16 16 0 1 1 16 16'/%3E%3Cpath d='M92 40a8 8 0 1 0 8 8'/%3E%3Cpath d='M108 116a12 12 0 1 1 12 12'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(180deg, #16241b 0%, #0c130e 100%);
+    background-size:144px 144px, cover;
+    color:#ddd3c0; min-height:100vh;
   }
-  .wrap { max-width:480px; margin:0 auto; padding:20px 14px 40px; }
-  header { text-align:center; padding:14px 0 6px; }
-  header .big { font-size:52px; line-height:1; }
-  h1 { font-size:27px; letter-spacing:3px; margin-top:8px; color:#ffd98a; text-shadow:0 2px 12px rgba(255,180,60,.35); }
-  .sub { margin-top:8px; font-size:13px; color:#b9aed6; line-height:1.7; }
-  .sub b { color:#ffd98a; font-weight:600; }
+  .wrap { max-width:480px; margin:0 auto; padding:16px 14px 40px; }
+  header { text-align:center; padding:6px 0 4px; }
+  header .big { display:none; }
+  .banner { width:100%; height:168px; object-fit:cover; border-radius:14px; border:1px solid #c9a86a; box-shadow:0 14px 34px rgba(0,0,0,.55), 0 0 18px rgba(201,168,106,.15); display:block; }
+  h1 { font-size:29px; letter-spacing:6px; margin-top:16px; color:#e8c87a; font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif; text-shadow:0 2px 14px rgba(0,0,0,.65); }
+  .sub { margin-top:9px; font-size:13px; color:#a99f88; line-height:1.7; }
+  .sub b { color:#e8c87a; font-weight:600; }
   .group-title {
-    margin:26px 2px 12px; font-size:15px; letter-spacing:2px; color:#ffd98a;
+    margin:28px 2px 12px; font-size:16px; letter-spacing:3px; color:#e8c87a;
+    font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
     display:flex; align-items:center; gap:10px;
   }
-  .group-title::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, rgba(255,217,138,.55), transparent); }
+  .group-title::before { content:"❖"; font-size:11px; color:#57b3a2; }
+  .group-title::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, rgba(201,168,106,.6), transparent); }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
   a.card {
-    display:block; text-decoration:none; color:inherit; position:relative;
-    background:linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
-    border:1px solid rgba(255,217,138,.22); border-radius:16px; padding:14px 12px 12px;
-    box-shadow:0 4px 14px rgba(0,0,0,.35);
+    display:block; text-decoration:none; color:inherit; position:relative; overflow:hidden;
+    background:rgba(26,36,28,.94);
+    border:1px solid #c9a86a; border-radius:12px; padding:14px 12px 12px;
+    box-shadow:0 10px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.14);
     transition:transform .08s ease;
   }
   a.card:active { transform:scale(.965); }
+  .card .thumb { display:none; }
+  a.card.has-thumb { padding-top:0; }
+  a.card.has-thumb .thumb { display:block; width:calc(100% + 24px); margin:0 -12px 10px; height:104px; object-fit:cover; border-bottom:1px solid rgba(201,168,106,.55); }
+  a.card.has-thumb .ico { display:none; }
   .card .ico { font-size:34px; line-height:1.1; }
-  .card .name { font-size:16.5px; font-weight:700; margin-top:6px; letter-spacing:1px; }
-  .card .desc { font-size:11.5px; color:#b9aed6; line-height:1.55; margin-top:4px; min-height:34px; }
+  .card .name { font-size:16.5px; font-weight:700; margin-top:6px; letter-spacing:1px; color:#f0e6cc; font-family:"Noto Serif SC","Songti SC","STSong",serif; }
+  .card .desc { font-size:11.5px; color:#a99f88; line-height:1.55; margin-top:4px; min-height:34px; }
   .card .no {
-    position:absolute; top:9px; right:11px; font-size:10.5px; color:#8f86ad; letter-spacing:.5px;
+    position:absolute; top:9px; right:11px; font-size:10.5px; color:#8f8266; letter-spacing:.5px; z-index:2;
+    background:rgba(12,19,14,.55); padding:1px 6px; border-radius:99px;
   }
-  .card .best { font-size:11px; color:#ffd98a; margin-top:5px; min-height:14px; }
+  .card .best { font-size:11px; color:#e8c87a; margin-top:5px; min-height:14px; }
   a.card.wide { grid-column:1 / -1; display:flex; align-items:center; gap:13px; }
   a.card.wide .desc { min-height:0; }
   a.card.wide .best { margin-top:3px; }
-  footer { text-align:center; margin-top:34px; font-size:11.5px; color:#7d76a0; line-height:1.8; }
+  footer { text-align:center; margin-top:36px; font-size:11.5px; color:#6f6450; line-height:1.8; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="big">🎮</div>
+    <img class="banner" src="assets/art_banner.png" alt="山海异兽群像">
     <h1>游戏大厅</h1>
     <p class="sub">按规划新做的 <b>21 款小游戏</b>，外加雷电特别收录。<br>点卡片进游戏，每款里都有「← 大厅」可以回来。</p>
   </header>
 
   <div class="group-title">第一批 · 益智开局</div>
   <div class="grid">
-    <a class="card" href="games/yibi.html"><span class="no">No.10</span><div class="ico">✒️</div><div class="name">一笔绘山海</div><div class="desc">一笔画出山海经异兽，十二关点亮图卷。</div><div class="best" data-best="yibi"></div></a>
-    <a class="card" href="games/caocao.html"><span class="no">No.11</span><div class="ico">🏯</div><div class="name">曹操快跑</div><div class="desc">华容道突围，按军令步数拿星。</div><div class="best" data-best="caocao"></div></a>
+    <a class="card has-thumb" href="games/yibi.html"><img class="thumb" src="assets/thumb_yibi.png" alt=""><span class="no">No.10</span><div class="ico">✒️</div><div class="name">一笔绘山海</div><div class="desc">一笔画出山海经异兽，十二关点亮图卷。</div><div class="best" data-best="yibi"></div></a>
+    <a class="card has-thumb" href="games/caocao.html"><img class="thumb" src="assets/thumb_caocao.png" alt=""><span class="no">No.11</span><div class="ico">🏯</div><div class="name">曹操快跑</div><div class="desc">华容道突围，按军令步数拿星。</div><div class="best" data-best="caocao"></div></a>
     <a class="card" href="games/banjia.html"><span class="no">No.12</span><div class="ico">🐻</div><div class="name">搬家小熊</div><div class="desc">推箱子进新家，后几关有冰面滑行。</div><div class="best" data-best="banjia"></div></a>
-    <a class="card" href="games/nianshou2048.html"><span class="no">No.13</span><div class="ico">🧨</div><div class="name">年兽 2048</div><div class="desc">合出麒麟来，每 20 步得一挂鞭炮。</div><div class="best" data-best="nianshou2048"></div></a>
+    <a class="card has-thumb" href="games/nianshou2048.html"><img class="thumb" src="assets/thumb_nianshou.png" alt=""><span class="no">No.13</span><div class="ico">🧨</div><div class="name">年兽 2048</div><div class="desc">合出麒麟来，每 20 步得一挂鞭炮。</div><div class="best" data-best="nianshou2048"></div></a>
     <a class="card" href="games/shuiqu.html"><span class="no">No.14</span><div class="ico">💧</div><div class="name">水渠工匠</div><div class="desc">转管道引水灌田，都江堰的活儿。</div><div class="best" data-best="shuiqu"></div></a>
     <a class="card" href="games/sudoku.html"><span class="no">No.15</span><div class="ico">🍵</div><div class="name">数独小馆</div><div class="desc">三档难度，提示只讲推理不报数。</div><div class="best" data-best="sudoku"></div></a>
   </div>
@@ -73,20 +83,20 @@
 
   <div class="group-title">第三批 · 山海与汉字</div>
   <div class="grid">
-    <a class="card" href="games/taotie.html"><span class="no">No.21</span><div class="ico">👹</div><div class="name">饕餮吞天</div><div class="desc">拖着饕餮吞万物，胃袋凑套才长大。</div><div class="best" data-best="taotie"></div></a>
-    <a class="card" href="games/zhuoyao.html"><span class="no">No.22</span><div class="ico">🗺️</div><div class="name">捉妖格</div><div class="desc">数格子加山海经线索，推理捉妖。</div><div class="best" data-best="zhuoyao"></div></a>
-    <a class="card" href="games/baozi.html"><span class="no">No.23</span><div class="ico">🥟</div><div class="name">包子叠叠塔</div><div class="desc">蒸笼上叠包子塔，切落的还能接住。</div><div class="best" data-best="baozi"></div></a>
-    <a class="card" href="games/bianzhong.html"><span class="no">No.24</span><div class="ico">🔔</div><div class="name">编钟乐师</div><div class="desc">跟着音符敲编钟，敲完回放你的曲。</div><div class="best" data-best="bianzhong"></div></a>
-    <a class="card" href="games/yizi.html"><span class="no">No.25</span><div class="ico">🏰</div><div class="name">一字守城</div><div class="desc">拖部首拼字成塔，守住十波进攻。</div><div class="best" data-best="yizi"></div></a>
+    <a class="card has-thumb" href="games/taotie.html"><img class="thumb" src="assets/thumb_taotie.png" alt=""><span class="no">No.21</span><div class="ico">👹</div><div class="name">饕餮吞天</div><div class="desc">拖着饕餮吞万物，胃袋凑套才长大。</div><div class="best" data-best="taotie"></div></a>
+    <a class="card has-thumb" href="games/zhuoyao.html"><img class="thumb" src="assets/thumb_zhuoyao.png" alt=""><span class="no">No.22</span><div class="ico">🗺️</div><div class="name">捉妖格</div><div class="desc">数格子加山海经线索，推理捉妖。</div><div class="best" data-best="zhuoyao"></div></a>
+    <a class="card has-thumb" href="games/baozi.html"><img class="thumb" src="assets/thumb_baozi.png" alt=""><span class="no">No.23</span><div class="ico">🥟</div><div class="name">包子叠叠塔</div><div class="desc">蒸笼上叠包子塔，切落的还能接住。</div><div class="best" data-best="baozi"></div></a>
+    <a class="card has-thumb" href="games/bianzhong.html"><img class="thumb" src="assets/thumb_bianzhong.png" alt=""><span class="no">No.24</span><div class="ico">🔔</div><div class="name">编钟乐师</div><div class="desc">跟着音符敲编钟，敲完回放你的曲。</div><div class="best" data-best="bianzhong"></div></a>
+    <a class="card has-thumb" href="games/yizi.html"><img class="thumb" src="assets/thumb_yizi.png" alt=""><span class="no">No.25</span><div class="ico">🏰</div><div class="name">一字守城</div><div class="desc">拖部首拼字成塔，守住十波进攻。</div><div class="best" data-best="yizi"></div></a>
   </div>
 
   <div class="group-title">第四批 · 长线耐玩</div>
   <div class="grid">
-    <a class="card" href="games/xingshi.html"><span class="no">No.26</span><div class="ico">🦁</div><div class="name">醒狮百人阵</div><div class="desc">先布阵调门，再带狮队冲门战年兽。</div><div class="best" data-best="xingshi"></div></a>
-    <a class="card" href="games/chuyao.html"><span class="no">No.27</span><div class="ico">⚔️</div><div class="name">山海除妖录</div><div class="desc">小道士割草群妖，三分钟后大妖压阵。</div><div class="best" data-best="chuyao"></div></a>
-    <a class="card" href="games/zaodian.html"><span class="no">No.28</span><div class="ico">🥣</div><div class="name">早点铺</div><div class="desc">三天经营：做包子豆浆，达标夺冠。</div><div class="best" data-best="zaodian"></div></a>
-    <a class="card" href="games/caiyuan.html"><span class="no">No.29</span><div class="ico">🌱</div><div class="name">小小菜园</div><div class="desc">跟着二十四节气种菜，离线也长。</div><div class="best" data-best="caiyuan"></div></a>
-    <a class="card" href="games/shouguan.html"><span class="no">No.30</span><div class="ico">🛡️</div><div class="name">山海守关</div><div class="desc">异兽塔防十二波，同族相邻有羁绊。</div><div class="best" data-best="shouguan"></div></a>
+    <a class="card has-thumb" href="games/xingshi.html"><img class="thumb" src="assets/thumb_xingshi.png" alt=""><span class="no">No.26</span><div class="ico">🦁</div><div class="name">醒狮百人阵</div><div class="desc">先布阵调门，再带狮队冲门战年兽。</div><div class="best" data-best="xingshi"></div></a>
+    <a class="card has-thumb" href="games/chuyao.html"><img class="thumb" src="assets/thumb_chuyao.png" alt=""><span class="no">No.27</span><div class="ico">⚔️</div><div class="name">山海除妖录</div><div class="desc">小道士割草群妖，三分钟后大妖压阵。</div><div class="best" data-best="chuyao"></div></a>
+    <a class="card has-thumb" href="games/zaodian.html"><img class="thumb" src="assets/thumb_zaodian.png" alt=""><span class="no">No.28</span><div class="ico">🥣</div><div class="name">早点铺</div><div class="desc">三天经营：做包子豆浆，达标夺冠。</div><div class="best" data-best="zaodian"></div></a>
+    <a class="card has-thumb" href="games/caiyuan.html"><img class="thumb" src="assets/thumb_caiyuan.png" alt=""><span class="no">No.29</span><div class="ico">🌱</div><div class="name">小小菜园</div><div class="desc">跟着二十四节气种菜，离线也长。</div><div class="best" data-best="caiyuan"></div></a>
+    <a class="card has-thumb" href="games/shouguan.html"><img class="thumb" src="assets/thumb_shouguan.png" alt=""><span class="no">No.30</span><div class="ico">🛡️</div><div class="name">山海守关</div><div class="desc">异兽塔防十二波，同族相邻有羁绊。</div><div class="best" data-best="shouguan"></div></a>
   </div>
 
   <div class="group-title">特别收录</div>

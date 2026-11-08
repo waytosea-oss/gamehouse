@@ -44,6 +44,39 @@ body{background:#0e1a0c;font-family:-apple-system,"PingFang SC","Microsoft YaHei
 .bigbtn:active{transform:scale(.96)}
 .hide{display:none!important}
 </style>
+<style data-gh-theme>
+
+body{background-color:#0c130e;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a86a' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath d='M20 96a16 16 0 1 1 16 16'/%3E%3Cpath d='M28 96a8 8 0 1 0 8 8'/%3E%3Cpath d='M84 40a16 16 0 1 1 16 16'/%3E%3Cpath d='M92 40a8 8 0 1 0 8 8'/%3E%3Cpath d='M108 116a12 12 0 1 1 12 12'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#16241b 0%,#0c130e 100%);background-size:144px 144px,cover;color:#ddd3c0}
+.gh-art{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(201,168,106,.65);margin-bottom:12px;display:block}
+#wrap{background:#0c130e}
+#topbar{background:rgba(10,16,11,.88);border-bottom:1px solid rgba(201,168,106,.5)}
+#topbar a{color:#e8c87a}
+#topbar .t{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+#muteBtn{background:rgba(26,36,28,.9);border:1px solid #c9a86a;color:#e8c87a}
+#term{color:#ddd3c0;background:rgba(10,16,11,.5)}
+#term b{color:#e8c87a}
+#hud{color:#ddd3c0;background:rgba(10,16,11,.5)}
+#hud b{color:#e8c87a}
+.sec{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+.overlay{background:rgba(5,9,6,.88);backdrop-filter:blur(3px)}
+.card{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.15), 0 0 16px rgba(201,168,106,.10)}
+.card h1{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+.card p{color:#ddd3c0}
+.card .best{color:#e8c87a}
+.card .em{display:none}
+.bigbtn{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.plot{background:linear-gradient(160deg,#3a2a16,#261a0d);border:1px solid rgba(201,168,106,.35);border-radius:10px;color:#ddd3c0}
+.plot .st{color:#ddd3c0}
+.plot.ready{border-color:#e8c87a}
+.plot .pg{background:rgba(0,0,0,.45)}
+.plot .pg i{background:linear-gradient(90deg,#57b3a2,#3a8a7c)}
+.seed{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.15), 0 0 16px rgba(201,168,106,.10);color:#ddd3c0}
+.seed small{color:#a99f88}
+.seed.sel{border-color:#e8c87a;background:rgba(201,168,106,.18)}
+.xbtn{background:rgba(12,19,14,.6);border:1px solid #c9a86a;color:#e8c87a;border-radius:10px}
+#tip{color:#a99f88}
+
+</style>
 </head>
 <body>
 <div id="wrap">
@@ -63,6 +96,7 @@ body{background:#0e1a0c;font-family:-apple-system,"PingFang SC","Microsoft YaHei
 
 <div class="overlay" id="startOv">
   <div class="card">
+    <img class="gh-art" src="../assets/art_caiyuan.png" alt="">
     <div class="em">🌱</div>
     <h1>小小菜园</h1>
     <p>选种子、点空地播种，再点秧苗浇水，等它长大点收卖钱。<br>菜园跟着真实日期的<b>二十四节气</b>走：种当季菜，卖价 ×1.5 还长得快。<br>关掉页面也不怕，回来时成熟的菜会自动卖掉（离线收益最多算 8 小时）。</p>

@@ -35,7 +35,38 @@ body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-ser
 .bigbtn{background:linear-gradient(180deg,#ffb340,#f08c1a);border:none;color:#3a2200;font-size:18px;font-weight:800;border-radius:12px;padding:12px 34px;margin-top:12px;cursor:pointer}
 .hidden{display:none!important}
 .best{color:#ffd97a;font-size:14px;margin-top:10px}
-</style></head>
+</style><style data-gh-theme>
+
+body{background-color:#0c130e;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23c9a86a' stroke-opacity='0.05' stroke-width='2'%3E%3Cpath d='M20 96a16 16 0 1 1 16 16'/%3E%3Cpath d='M28 96a8 8 0 1 0 8 8'/%3E%3Cpath d='M84 40a16 16 0 1 1 16 16'/%3E%3Cpath d='M92 40a8 8 0 1 0 8 8'/%3E%3Cpath d='M108 116a12 12 0 1 1 12 12'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#16241b 0%,#0c130e 100%);background-size:144px 144px,cover;color:#ddd3c0}
+.gh-art{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(201,168,106,.65);margin-bottom:12px;display:block}
+.topbar{background:rgba(10,16,11,.88);border-bottom:1px solid rgba(201,168,106,.5)}
+.topbar a{color:#e8c87a}
+.tname{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+#muteBtn{background:rgba(26,36,28,.9);border:1px solid #c9a86a;color:#e8c87a}
+.hud .chip{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.15), 0 0 16px rgba(201,168,106,.10);color:#ddd3c0}
+.chip{color:#ddd3c0}
+.ov{background:rgba(5,9,6,.88);backdrop-filter:blur(3px)}
+.ov .card{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.15), 0 0 16px rgba(201,168,106,.10)}
+.ov h1{color:#e8c87a;font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;letter-spacing:.12em}
+.ov p{color:#ddd3c0}
+.best{color:#e8c87a}
+.bigbtn{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.board{border:2px solid #6b5322;box-shadow:0 12px 32px rgba(0,0,0,.5);border-radius:12px;padding:6px;background:rgba(10,16,11,.4)}
+.cell{background:linear-gradient(160deg,#f1e4c0,#e3d0a0);color:#4a3418;border:1px solid rgba(138,106,52,.55)}
+.cell.water{background:linear-gradient(160deg,#7fb5a6,#4f8a7c);color:#0d2b24}
+.cell.hit{background:linear-gradient(160deg,#d4694e,#a83c22);color:#ffe9d2}
+.cell.empty{background:rgba(26,36,28,.55);color:#a99f88}
+.dbtn{background:rgba(12,19,14,.6);border:1px solid #c9a86a;color:#e8c87a;border-radius:10px}
+.mbtn{background:rgba(12,19,14,.6);border:1px solid #c9a86a;color:#e8c87a;border-radius:10px}
+.dbtn.on{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.mbtn.on{background:linear-gradient(180deg,#d9b96e,#8a6a34);color:#241a08;border:1px solid #e8c87a;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+#clues{background:rgba(26,36,28,.94);border:1px solid #c9a86a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(232,200,122,.15), 0 0 16px rgba(201,168,106,.10);color:#ddd3c0}
+#clues b{color:#ff9d85}
+.cnt{color:#e8c87a}
+#msg{color:#e8c87a}
+
+</style>
+</head>
 <body>
 <div class="wrap">
   <div class="topbar"><a href="../index.html">← 大厅</a><span class="tname">🔮 捉妖格</span><button id="muteBtn">🔊</button></div>
@@ -48,6 +79,7 @@ body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-ser
 </div>
 
 <div class="ov" id="startOv"><div class="card">
+  <img class="gh-art" src="../assets/art_zhuoyao.png" alt="">
   <h1>🔮 捉妖格</h1>
   <p>格子四周的数字，是每行每列藏着的妖怪数。<br>再读《山海经》式线索——谁挨着水、谁躲在角落，<br>推理出每只妖的位置，点格捉它！</p>
   <p>捉错 3 次失败；插旗可以标记嫌疑格。</p>
