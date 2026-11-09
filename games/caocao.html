@@ -212,6 +212,14 @@ body::after{background:radial-gradient(115% 55% at 50% 0%,rgba(6,10,20,0) 45%,rg
 .piece .arr{z-index:8}
 .piece.still video.pv{opacity:0}
 </style>
+<style id="hr-bingvar">
+.p-bing2{background-image:url('../assets/hr/bing2.jpg')}
+.p-bing3{background-image:url('../assets/hr/bing3.jpg')}
+.p-bing4{background-image:url('../assets/hr/bing4.jpg')}
+.piece.act.p-bing2{background-image:url('../assets/hr/bing2.jpg')}
+.piece.act.p-bing3{background-image:url('../assets/hr/bing3.jpg')}
+.piece.act.p-bing4{background-image:url('../assets/hr/bing4.jpg')}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -336,18 +344,33 @@ function canMove(p, dx, dy) {
 const DIRS = [[0, -1, 'up', '▲'], [0, 1, 'down', '▼'], [-1, 0, 'left', '◀'], [1, 0, 'right', '▶']];
 function legalDirs(p) { return DIRS.filter(d => canMove(p, d[0], d[1])); }
 
+const VID_READY = { cao: 1, zhang: 1, guan: 1, zhao: 1, ma: 1, huang: 1, bing: 1 };
+function vidKind(p) { return (p.kind === 'bing' && p._v > 1) ? 'bing' + p._v : p.kind; }
+function fadeSwap(v, src, loop) {
+  if (!v) return;
+  v.loop = loop;
+  if (v.src.endsWith(src)) { v.play().catch(() => {}); return; }
+  const tok = (v._tok = (v._tok || 0) + 1);
+  v.style.opacity = '0';
+  setTimeout(() => {
+    if (v._tok !== tok || !v.isConnected) return;
+    v.src = src; v.loop = loop; v.play().catch(() => {});
+    v.style.opacity = '';
+  }, 140);
+}
 function render() {
   board.querySelectorAll('.piece').forEach(el => el.remove());
+  let bc = 0; pieces.forEach(p => { if (p.kind === 'bing') { bc++; p._v = bc; } });
   pieces.forEach((p, i) => {
     const el = document.createElement('div');
-    el.className = 'piece p-' + p.kind + (p.w === 1 && p.h === 2 ? ' v' : '') + (i === sel ? ' sel' : '');
+    el.className = 'piece p-' + p.kind + (p.w === 1 && p.h === 2 ? ' v' : '') + (i === sel ? ' sel' : '') + (p._v > 1 ? ' p-bing' + p._v : '');
     el.style.left = (p.x * 25 + 0.8) + '%';
     el.style.top = (p.y * 20 + 0.8) + '%';
     el.style.width = (p.w * 25 - 1.6) + '%';
     el.style.height = (p.h * 20 - 1.6) + '%';
-    el.innerHTML = (VID_KINDS[p.kind] ? '<video class="pv" muted loop playsinline autoplay preload="auto" src="../assets/hr/vid/' + p.kind + '_idle.mp4"></video>' : '') + '<span class="nm">' + p.name + '</span>';
+    el.innerHTML = (VID_READY[vidKind(p)] ? '<video class="pv" muted loop playsinline autoplay preload="auto" src="../assets/hr/vid/' + vidKind(p) + '_idle.mp4"></video>' : '') + '<span class="nm">' + p.name + '</span>';
     if (p.kind === 'cao') applyCaoMood(el);
-    if (actState[i] && Date.now() < actState[i]) { el.classList.add('act'); const vv = el.querySelector('video.pv'); if (vv) { vv.src = '../assets/hr/vid/' + p.kind + '_act.mp4'; vv.loop = false; vv.play().catch(() => {}); } }
+    if (actState[i] && Date.now() < actState[i]) { el.classList.add('act'); const vv = el.querySelector('video.pv'); if (vv) { vv.src = '../assets/hr/vid/' + vidKind(p) + '_act.mp4'; vv.loop = false; vv.play().catch(() => {}); } }
     el.dataset.idx = i;
     if (i === sel && !won) {
       legalDirs(p).forEach(d => {
@@ -393,13 +416,12 @@ function applyCaoMood(el) {
   if (vv) {
     if (moodOn && (caoMood === 'order' || caoMood === 'good' || caoMood === 'win')) {
       el.classList.remove('still');
-      if (!vv.src.endsWith('cao_act.mp4')) { vv.src = '../assets/hr/vid/cao_act.mp4'; vv.play().catch(() => {}); }
-      vv.loop = (caoMood === 'win');
+      fadeSwap(vv, '../assets/hr/vid/cao_act.mp4', caoMood === 'win');
     } else if (moodOn && caoMood === 'stern') {
       el.classList.add('still');
     } else {
       el.classList.remove('still');
-      if (!vv.src.endsWith('cao_idle.mp4')) { vv.src = '../assets/hr/vid/cao_idle.mp4'; vv.loop = true; vv.play().catch(() => {}); }
+      fadeSwap(vv, '../assets/hr/vid/cao_idle.mp4', true);
     }
   }
   el.querySelectorAll('.bubble').forEach(b => b.remove());
@@ -422,14 +444,14 @@ const actState = {}, actTimers = {};
 function actReact(idx, dur) {
   const p = pieces[idx]; if (!p || !ACT_KINDS[p.kind]) return;
   dur = dur || 1000;
-  if (VID_KINDS[p.kind]) dur = Math.max(dur, 2300);
+  if (VID_READY[vidKind(p)]) dur = Math.max(dur, 4800);
   actState[idx] = Date.now() + dur;
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
   if (el) el.classList.add('act');
   const vv = el ? el.querySelector('video.pv') : null;
-  if (vv) { vv.src = '../assets/hr/vid/' + p.kind + '_act.mp4'; vv.loop = false; vv.play().catch(() => {}); }
+  if (vv) fadeSwap(vv, '../assets/hr/vid/' + vidKind(p) + '_act.mp4', false);
   clearTimeout(actTimers[idx]);
-  actTimers[idx] = setTimeout(() => { delete actState[idx]; const e2 = board.querySelector('.piece[data-idx="' + idx + '"]'); if (e2) { e2.classList.remove('act'); const v2 = e2.querySelector('video.pv'); if (v2) { v2.src = '../assets/hr/vid/' + pieces[idx].kind + '_idle.mp4'; v2.loop = true; v2.play().catch(() => {}); } } }, dur + 60);
+  actTimers[idx] = setTimeout(() => { delete actState[idx]; const e2 = board.querySelector('.piece[data-idx="' + idx + '"]'); if (e2) { e2.classList.remove('act'); const v2 = e2.querySelector('video.pv'); if (v2) fadeSwap(v2, '../assets/hr/vid/' + vidKind(pieces[idx]) + '_idle.mp4', true); } }, dur + 60);
 }
 function shakePiece(idx) {
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
