@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#17102b">
+<meta name="hub-url" content="../">
+<title>星骰实验</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="preload" as="image" href="assets/cover.webp">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<canvas id="cv"></canvas>
+
+<!-- 首页 -->
+<div class="scr on" id="menu">
+  <div class="cover"></div>
+  <div class="topRow">
+    <button class="pill" id="mHub" aria-label="返回游戏屋"><b>‹</b>游戏屋</button>
+    <div class="sp"></div>
+    <button class="ic" id="mHelp" aria-label="玩法说明"><svg viewBox="0 0 24 24"><path d="M9.2 9a2.9 2.9 0 1 1 4.3 2.5c-.9.4-1.5 1-1.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.5" fill="currentColor"/></svg></button>
+    <button class="ic" id="mSnd" aria-label="音效"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="mTitle"><h1>星骰实验</h1><p>锁住星骰，组出大连锁</p></div>
+  <div class="card">
+    <div class="cardH"><b>选择实验阶段</b><span>单机离线 · 算式全公开</span></div>
+    <div class="stages" id="stages"></div>
+    <div class="daily" id="dailyCard"></div>
+  </div>
+  <div class="footNote">没有下注与付费重掷，每次得分都逐项展开。</div>
+</div>
+
+<!-- 游戏中 -->
+<div class="scr" id="play">
+  <div class="hTop">
+    <button class="ic light" id="hBack" aria-label="返回阶段"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="hName"><b id="hName">星骰入门</b><span id="hSub">第 1 轮 · 共 3 轮</span></div>
+    <button class="ic light" id="hPause" aria-label="暂停"><svg viewBox="0 0 24 24"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/></svg></button>
+  </div>
+  <div class="stat">
+    <div><small>得分</small><b id="hScore">0</b></div>
+    <div class="mid"><small>阶段目标</small><b id="hTarget">60</b><i class="bar"><i id="hBar"></i></i></div>
+    <div><small>重掷</small><b id="hReroll">2</b></div>
+  </div>
+  <div class="trayWrap">
+    <div class="tray" id="tray"></div>
+    <div class="prob" id="probLine"></div>
+  </div>
+  <div class="machHead"><b>计分机器</b><span>点一台查看完整算式</span></div>
+  <div class="machines" id="machines"></div>
+  <div class="botBar">
+    <button class="chipBtn" id="bChip"><img src="assets/chip.webp" alt=""><span id="chipName">芯片：未装入</span></button>
+    <button class="cta small" id="bReroll">重掷未锁骰</button>
+  </div>
+  <div class="statusLine" id="statusLine"></div>
+</div>
+
+<!-- 计分确认 -->
+<div class="scr sheet" id="scoreP">
+  <div class="panel">
+    <button class="x" id="sClose" aria-label="关闭">×</button>
+    <h3 id="sTitle">偶波机</h3><p class="sub" id="sRule"></p>
+    <div class="formula" id="sFormula"></div>
+    <div class="chipRow" id="sChipRow"></div>
+    <div class="totalRow"><span>本轮得分</span><b id="sTotal">0</b></div>
+    <button class="cta" id="sConfirm">确认计分</button>
+    <button class="sec wide" id="sCancel">再想想</button>
+  </div>
+</div>
+
+<!-- 芯片 -->
+<div class="scr sheet" id="chipP">
+  <div class="panel">
+    <button class="x" id="cClose" aria-label="关闭">×</button>
+    <h3>实验芯片</h3><p class="sub">每轮最多装入一块，计分时按写明的规则追加一行。</p>
+    <div class="chips" id="chipList"></div>
+    <button class="sec wide" id="cNone">本轮不装芯片</button>
+  </div>
+</div>
+
+<!-- 暂停 -->
+<div class="scr sheet" id="pauseP">
+  <div class="panel">
+    <h3>暂停</h3><p class="sub" id="pInfo"></p>
+    <button class="cta" id="pResume">继续</button>
+    <div class="row2"><button class="sec" id="pRestart">重开本阶段</button><button class="sec" id="pSnd">音效：开</button></div>
+    <div class="row2"><button class="sec" id="pMenu">返回阶段</button><button class="sec" id="pHub">游戏屋</button></div>
+  </div>
+</div>
+
+<!-- 玩法说明 -->
+<div class="scr sheet" id="helpP">
+  <div class="panel">
+    <button class="x" id="helpClose" aria-label="关闭">×</button>
+    <h3>玩法说明</h3>
+    <div class="helpBody">
+      <p><b>一轮怎么玩。</b>先投出五颗星骰，点骰子可以锁定或解锁，再用两次重掷调整未锁的骰子。满意后点一台计分机器，先看完整算式，再确认计分，本轮结束。</p>
+      <p><b>机器只能用一次。</b>同一阶段里，每台计分机器只能计分一次，机器数量和轮数都摆在明处，先算清再出手。</p>
+      <p><b>芯片追加一行。</b>每轮最多装入一块芯片，芯片按它写明的规则在算式末尾追加一行加分。装不装、装哪块，确认计分前都能改。</p>
+      <p><b>概率写在脸上。</b>骰盘下方会显示再掷一次有多大机会超过当前最佳得分，按未锁骰子的全部结果精确算出，不是估算。</p>
+      <p><b>没有赌博成分。</b>没有下注、现金、筹码和付费重掷；达不到目标可以用同一副随机序列重试，复盘每一步。</p>
+    </div>
+    <button class="cta" id="helpOk">知道了</button>
+  </div>
+</div>
+
+<!-- 阶段结算 -->
+<div class="scr result" id="resP">
+  <div class="rWrap">
+    <h2 id="resH">阶段目标达成</h2><p class="sub" id="resSub"></p>
+    <div class="card big">
+      <small>阶段得分</small><div class="pct" id="resScore">0</div>
+      <div class="line" id="resGoal"></div>
+      <div class="stars" id="resStars"><i></i><i></i><i></i></div>
+      <ul class="log" id="resLog"></ul>
+    </div>
+    <div class="card" id="resReward" hidden><span class="tag">新收获</span><div id="resRewardBody"></div></div>
+    <button class="cta" id="resNext">进入下一阶段</button>
+    <div class="row2"><button class="sec" id="resRetry">同序列再试</button><button class="sec" id="resMenu">返回阶段</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="aiNote">部分美术与动画由 AI 生成</div>
+<script src="pk.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body></html>

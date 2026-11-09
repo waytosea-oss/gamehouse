@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2b7d9e">
+<meta name="hub-url" content="../">
+<title>弹岛球会</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="preload" as="image" href="assets/cover.webp">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<canvas id="cv"></canvas>
+
+<!-- 首页 -->
+<div class="scr on" id="menu">
+  <div class="cover"></div>
+  <div class="topRow">
+    <button class="pill" id="mHub" aria-label="返回游戏屋"><b>‹</b>游戏屋</button>
+    <div class="sp"></div>
+    <button class="ic" id="mHelp" aria-label="玩法说明"><svg viewBox="0 0 24 24"><path d="M9.2 9a2.9 2.9 0 1 1 4.3 2.5c-.9.4-1.5 1-1.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.5" fill="currentColor"/></svg></button>
+    <button class="ic" id="mSnd" aria-label="音效"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="mTitle"><h1>弹岛球会</h1><p>打一杆，让小球弹过一座海岛</p></div>
+  <div class="card">
+    <div class="cardH"><b>海岛航线</b><span>单机离线 · 六座球岛</span></div>
+    <div class="holes" id="holes"></div>
+    <div class="daily" id="dailyCard"></div>
+  </div>
+  <div class="footNote">拖动瞄准，回拉定力度，松手击球。落水回上个安全点，加一杆。</div>
+</div>
+
+<!-- 游戏中 HUD -->
+<div class="hud" id="hud">
+  <div class="hTop">
+    <button class="ic light" id="hBack" aria-label="返回选洞"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="hName"><b id="hName">第一座球岛</b><span id="hSub">直线热身</span></div>
+    <button class="ic light" id="hPause" aria-label="暂停"><svg viewBox="0 0 24 24"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/></svg></button>
+  </div>
+  <div class="chips">
+    <span class="chip" id="hStroke">第 1 杆</span>
+    <span class="chip" id="hPar">标准 2 杆</span>
+    <span class="chip" id="hLimit">上限 5 杆</span>
+    <span class="chip tide" id="hTide" hidden>潮汐</span>
+  </div>
+</div>
+<div class="botHud" id="botHud">
+  <div class="powWrap">
+    <div class="powLab"><span>力度</span><b id="powVal">松手击球</b></div>
+    <div class="powBar"><i id="powFill"></i></div>
+    <div class="powHint">在球道上拖动瞄准，回拉选择力度，松手击球；拖回球边可以取消。</div>
+  </div>
+  <button class="baffleBtn" id="bBaffle" hidden>挡板</button>
+</div>
+
+<!-- 挡板 -->
+<div class="scr sheet" id="baffleP">
+  <div class="panel">
+    <button class="x" id="bfClose" aria-label="关闭">×</button>
+    <h3>挡板角度</h3><p class="sub">本洞只能在第 1 杆前调整一次，先看清反弹路线再锁定。</p>
+    <canvas id="bfCv" width="640" height="400"></canvas>
+    <div class="bfOpts" id="bfOpts"></div>
+    <div class="kv"><span>预览</span><b id="bfNote">反弹后贴近洞口</b></div>
+    <div class="kv"><span>本洞调整次数</span><b id="bfCount">0 / 1</b></div>
+    <button class="cta" id="bfOk">锁定角度，回到第 1 杆</button>
+  </div>
+</div>
+
+<!-- 暂停 -->
+<div class="scr sheet" id="pauseP">
+  <div class="panel">
+    <h3>暂停</h3><p class="sub" id="pInfo"></p>
+    <button class="cta" id="pResume">继续</button>
+    <div class="row2"><button class="sec" id="pRestart">重开本洞</button><button class="sec" id="pSnd">音效：开</button></div>
+    <div class="row2"><button class="sec" id="pMenu">返回选洞</button><button class="sec" id="pHub">游戏屋</button></div>
+  </div>
+</div>
+
+<!-- 玩法说明 -->
+<div class="scr sheet" id="helpP">
+  <div class="panel">
+    <button class="x" id="helpClose" aria-label="关闭">×</button>
+    <h3>玩法说明</h3>
+    <div class="helpBody">
+      <p><b>怎么击球。</b>在球道上按住拖动，瞄准线会画出第一段路线和反弹点；往回拉决定力度，松手击球。把手指拖回小球附近再松开，可以取消这一杆。</p>
+      <p><b>两种护栏。</b>紫色护栏是硬墙，反弹有力；珊瑚色护栏是软墙，会吃掉球速，适合让球停在墙边。</p>
+      <p><b>挡板只有一次机会。</b>带挡板的洞，可以在第 1 杆前调整一次角度，之后整洞固定，靠已有布置打完。</p>
+      <p><b>落水与上限。</b>球落水后回到上个安全落点，加一杆。超过每洞上限杆数，本洞失败，可以重开。每洞的低杆纪录保存在本机。</p>
+      <p><b>回放可复现。</b>物理用固定步长模拟，同一洞面、同一角度和力度，落点完全一致。结算后可以看本洞的击球回放。</p>
+    </div>
+    <button class="cta" id="helpOk">知道了</button>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div class="scr sheet" id="resP">
+  <div class="panel result">
+    <h3 id="resH">入洞</h3><p class="sub" id="resSub"></p>
+    <div class="resNums">
+      <div><b id="resUsed">2 杆</b><small>本洞用杆</small></div>
+      <div><b id="resPar">3 杆</b><small>标准杆</small></div>
+      <div><b id="resDiff">－1</b><small>低于标准</small></div>
+    </div>
+    <div class="line" id="resBest"></div>
+    <div class="card slim" id="resUnlock" hidden><span class="tag">已解锁</span><div id="resUnlockT"></div></div>
+    <button class="cta" id="resNext">下一洞</button>
+    <div class="row2"><button class="sec" id="resReplay">看击球回放</button><button class="sec" id="resRetry">重打本洞</button></div>
+    <button class="sec wide" id="resMenu">返回选洞</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="aiNote">部分美术与动画由 AI 生成</div>
+<script src="pk.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body></html>

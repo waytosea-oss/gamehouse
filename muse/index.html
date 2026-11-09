@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12101f">
+<title>MUSE版本游戏屋</title>
+<link rel="icon" href="stardice/assets/icon.png">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#12101f; color:#efeaff; min-height:100vh; }
+body::before { content:''; position:fixed; inset:0; background:radial-gradient(80% 46% at 50% -6%, rgba(138,95,192,.34), rgba(18,16,31,0) 70%), radial-gradient(60% 40% at 88% 108%, rgba(61,157,184,.25), rgba(18,16,31,0) 70%); pointer-events:none; }
+.wrap { position:relative; max-width:1060px; margin:0 auto; padding:30px 16px 54px; }
+header { text-align:center; padding:12px 0 6px; }
+.kicker { font-size:12px; letter-spacing:.5em; color:#c9a24d; }
+h1 { font-size:clamp(30px, 6.4vw, 46px); letter-spacing:.1em; margin-top:10px; font-weight:800; color:#fff; }
+h1 em { font-style:normal; color:#ffd873; }
+.sub { margin-top:9px; font-size:13.5px; color:#a99bd6; letter-spacing:.18em; }
+.count { display:inline-block; margin-top:15px; font-size:12.5px; color:#ffd873; border:1px solid rgba(201,162,77,.55); border-radius:999px; padding:5px 14px; background:rgba(201,162,77,.08); }
+h2 { font-size:16px; letter-spacing:.22em; color:#ffd873; margin:32px 2px 13px; display:flex; align-items:center; gap:12px; }
+h2::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(201,162,77,.5), rgba(201,162,77,0)); }
+.grid { display:grid; grid-template-columns:1fr; gap:16px; }
+@media (min-width:720px) { .grid { grid-template-columns:1fr 1fr; } }
+.game { display:block; text-decoration:none; color:inherit; background:linear-gradient(180deg, rgba(52,38,88,.72), rgba(30,22,54,.88)); border:1px solid rgba(201,162,77,.4); border-radius:18px; overflow:hidden; box-shadow:0 14px 34px rgba(0,0,0,.42); }
+.game:active { transform:scale(.995); }
+.game .media { position:relative; aspect-ratio:16/10; background:#0c0a18; }
+.game video, .game img.cover { width:100%; height:100%; object-fit:cover; display:block; }
+.new { position:absolute; top:10px; left:10px; background:linear-gradient(180deg,#ffd873,#f0a12c); color:#4a2400; font-size:11.5px; font-weight:800; letter-spacing:.14em; padding:4px 10px; border-radius:7px; box-shadow:0 4px 12px rgba(0,0,0,.4); }
+.game .tx { padding:13px 15px 15px; }
+.game .tx b { font-size:19px; letter-spacing:.06em; }
+.game .tx p { margin-top:5px; font-size:13px; line-height:1.65; color:#c4b6ec; }
+.tags { margin-top:9px; display:flex; gap:7px; flex-wrap:wrap; }
+.tags span { font-size:11px; color:#ffd873; border:1px solid rgba(201,162,77,.45); border-radius:999px; padding:3px 9px; }
+.play { margin-top:12px; display:inline-block; background:linear-gradient(180deg,#ffd873,#f0a12c); color:#4a2400; font-weight:800; font-size:14px; letter-spacing:.14em; padding:9px 22px; border-radius:11px; }
+.ext { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; background:rgba(255,255,255,.045); border:1px solid rgba(169,155,214,.3); border-radius:14px; padding:12px 14px; }
+.ext img { width:56px; height:56px; border-radius:11px; object-fit:cover; flex:none; }
+.ext .tx { flex:1; min-width:0; }
+.ext .tx b { font-size:15.5px; }
+.ext .tx p { font-size:12px; color:#a99bd6; margin-top:2px; }
+.ext .go { font-size:12px; color:#ffd873; white-space:nowrap; }
+.stack { display:flex; flex-direction:column; gap:10px; }
+.road { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (min-width:720px) { .road { grid-template-columns:repeat(3, 1fr); } }
+.road li { display:flex; align-items:baseline; gap:8px; background:rgba(255,255,255,.035); border:1px solid rgba(169,155,214,.16); border-radius:11px; padding:9px 11px; }
+.bid { font-size:11px; color:#8d7fb8; font-weight:700; }
+.bname { font-size:13.5px; color:#d9cfff; }
+.bcat { margin-left:auto; font-size:11px; color:#77689f; white-space:nowrap; }
+footer { margin-top:38px; text-align:center; font-size:12px; color:#77689f; line-height:1.9; }
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="kicker">MUSE 游戏屋</div>
+    <h1>MUSE<em>版本</em>游戏屋</h1>
+    <p class="sub">第三批小游戏 · 先行体验 · 陆续更新</p>
+    <span class="count">已完成 4 / 30 · 本页可玩 2 款</span>
+  </header>
+
+  <h2>本页可玩</h2>
+  <div class="grid">
+    <a class="game" href="stardice/">
+      <div class="media"><video src="stardice/assets/poster.mp4" autoplay muted loop playsinline poster="stardice/assets/cover.webp"></video><span class="new">NEW</span></div>
+      <div class="tx"><b>星骰实验</b><p>锁住几颗星骰，用一台奇怪机器把小点数组成大连锁。</p>
+      <div class="tags"><span>B3-09</span><span>策略</span><span>骰子构筑</span><span>算式全公开</span></div>
+      <span class="play">开始玩</span></div>
+    </a>
+    <a class="game" href="bounceisle/">
+      <div class="media"><video src="bounceisle/assets/poster.mp4" autoplay muted loop playsinline poster="bounceisle/assets/cover.webp"></video><span class="new">NEW</span></div>
+      <div class="tx"><b>弹岛球会</b><p>打一杆，让小球借弹性护栏跳过一座海岛。</p>
+      <div class="tags"><span>B3-17</span><span>派对竞技</span><span>物理弹射</span><span>六座球岛</span></div>
+      <span class="play">开始玩</span></div>
+    </a>
+  </div>
+
+  <h2>已在游戏屋上线</h2>
+  <div class="stack">
+    <a class="ext" href="https://trigger-tech.fun/games/paperland/"><img src="https://trigger-tech.fun/games/paperland/assets/cover.webp" alt=""><span class="tx"><b>纸境圈地</b><p>B3-16 · 一条尾线，把白纸折成你的领地</p></span><span class="go">去游戏屋玩 ›</span></a>
+    <a class="ext" href="https://trigger-tech.fun/games/starpet/"><img src="https://trigger-tech.fun/games/starpet/assets/cover.webp" alt=""><span class="tx"><b>星宠合住</b><p>B3-24 · 星宠合住公寓</p></span><span class="go">去游戏屋玩 ›</span></a>
+  </div>
+
+  <h2>制作中（26 款）</h2>
+  <ul class="road"><li><span class="bid">B3-01</span><span class="bname">折光积木</span><span class="bcat">space</span></li><li><span class="bid">B3-02</span><span class="bname">九环星锁</span><span class="bcat">space</span></li><li><span class="bid">B3-03</span><span class="bname">倒影街区</span><span class="bcat">space</span></li><li><span class="bid">B3-04</span><span class="bname">软桥救援</span><span class="bcat">space</span></li><li><span class="bid">B3-05</span><span class="bname">重力邮局</span><span class="bcat">space</span></li><li><span class="bid">B3-06</span><span class="bname">风暴牌旅</span><span class="bcat">策略</span></li><li><span class="bid">B3-07</span><span class="bname">行囊远征</span><span class="bcat">策略</span></li><li><span class="bid">B3-08</span><span class="bname">云舰棋局</span><span class="bcat">策略</span></li><li><span class="bid">B3-10</span><span class="bname">迷你航网</span><span class="bcat">策略</span></li><li><span class="bid">B3-11</span><span class="bname">雾港失物所</span><span class="bcat">悬疑探索</span></li><li><span class="bid">B3-12</span><span class="bname">潮汐打捞队</span><span class="bcat">悬疑探索</span></li><li><span class="bid">B3-13</span><span class="bname">长夜灯塔</span><span class="bcat">悬疑探索</span></li><li><span class="bid">B3-14</span><span class="bname">回声深井</span><span class="bcat">悬疑探索</span></li><li><span class="bid">B3-15</span><span class="bname">双影密室</span><span class="bcat">悬疑探索</span></li><li><span class="bid">B3-18</span><span class="bname">屋顶抓抓</span><span class="bcat">派对竞技</span></li><li><span class="bid">B3-19</span><span class="bname">风帆快递</span><span class="bcat">派对竞技</span></li><li><span class="bid">B3-20</span><span class="bname">碰碰货运</span><span class="bcat">派对竞技</span></li><li><span class="bid">B3-21</span><span class="bname">漂流造物</span><span class="bcat">创造</span></li><li><span class="bid">B3-22</span><span class="bname">微型工厂</span><span class="bcat">创造</span></li><li><span class="bid">B3-23</span><span class="bname">灯影换装</span><span class="bcat">创造</span></li><li><span class="bid">B3-25</span><span class="bname">街角翻新</span><span class="bcat">创造</span></li><li><span class="bid">B3-26</span><span class="bname">野光图鉴</span><span class="bcat">慢节奏</span></li><li><span class="bid">B3-27</span><span class="bname">云端攀行</span><span class="bcat">慢节奏</span></li><li><span class="bid">B3-28</span><span class="bname">沙丘化石局</span><span class="bcat">慢节奏</span></li><li><span class="bid">B3-29</span><span class="bname">方寸生态</span><span class="bcat">慢节奏</span></li><li><span class="bid">B3-30</span><span class="bname">慢信号台</span><span class="bcat">慢节奏</span></li></ul>
+
+  <footer>本页是 MUSE 独立版本，与游戏屋分开更新。<br>部分美术与动画由 AI 生成</footer>
+</div>
+</body></html>
