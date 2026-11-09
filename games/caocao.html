@@ -422,6 +422,7 @@ const actState = {}, actTimers = {};
 function actReact(idx, dur) {
   const p = pieces[idx]; if (!p || !ACT_KINDS[p.kind]) return;
   dur = dur || 1000;
+  if (VID_KINDS[p.kind]) dur = Math.max(dur, 2300);
   actState[idx] = Date.now() + dur;
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
   if (el) el.classList.add('act');
