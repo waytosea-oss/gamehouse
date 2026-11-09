@@ -417,7 +417,7 @@ function caoReact(kind, hold) {
   if (kind && !hold) caoTimer = setTimeout(() => { caoMood = null; const e2 = board.querySelector('.p-cao'); if (e2) applyCaoMood(e2); }, 1650);
 }
 const ACT_KINDS = { guan: 1, zhang: 1, zhao: 1, ma: 1, huang: 1, bing: 1 };
-const VID_KINDS = { cao: 1, zhang: 1, guan: 1 };
+const VID_KINDS = { cao: 1, zhang: 1, guan: 1, zhao: 1, ma: 1, huang: 1, bing: 1 };
 const actState = {}, actTimers = {};
 function actReact(idx, dur) {
   const p = pieces[idx]; if (!p || !ACT_KINDS[p.kind]) return;
