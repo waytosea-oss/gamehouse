@@ -220,6 +220,18 @@ body::after{background:radial-gradient(115% 55% at 50% 0%,rgba(6,10,20,0) 45%,rg
 .piece.act.p-bing3{background-image:url('../assets/hr/bing3.jpg')}
 .piece.act.p-bing4{background-image:url('../assets/hr/bing4.jpg')}
 </style>
+<style id="hr-hint">
+.piece.hinting{box-shadow:0 0 0 2.5px rgba(130,220,255,.95),0 0 24px rgba(80,180,255,.8),0 6px 14px rgba(0,0,0,.55);z-index:6}
+.hint-arrow{position:absolute;left:50%;top:50%;z-index:7;font-size:34px;line-height:1;color:#cfeeff;text-shadow:0 0 10px rgba(70,180,255,.95),0 1px 3px rgba(0,0,0,.65);opacity:.55;pointer-events:none}
+.hint-arrow.up{animation:ha-up .85s ease-in-out infinite}
+.hint-arrow.down{animation:ha-down .85s ease-in-out infinite}
+.hint-arrow.left{animation:ha-left .85s ease-in-out infinite}
+.hint-arrow.right{animation:ha-right .85s ease-in-out infinite}
+@keyframes ha-up{0%,100%{transform:translate(-50%,-38%);opacity:.35}50%{transform:translate(-50%,-64%);opacity:.8}}
+@keyframes ha-down{0%,100%{transform:translate(-50%,-62%);opacity:.35}50%{transform:translate(-50%,-36%);opacity:.8}}
+@keyframes ha-left{0%,100%{transform:translate(-38%,-50%);opacity:.35}50%{transform:translate(-64%,-50%);opacity:.8}}
+@keyframes ha-right{0%,100%{transform:translate(-62%,-50%);opacity:.35}50%{transform:translate(-36%,-50%);opacity:.8}}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -238,6 +250,7 @@ body::after{background:radial-gradient(115% 55% at 50% 0%,rgba(6,10,20,0) 45%,rg
   <div id="board"><div class="exit">出 口</div></div>
   <div class="btnrow">
     <button class="btn" id="resetBtn">重开本关</button>
+    <button class="btn" id="hintBtn">提示一步</button>
   </div>
   <div class="winbar" id="winbar">
     <div class="msg" id="winMsg"></div>
@@ -453,6 +466,90 @@ function actReact(idx, dur) {
   clearTimeout(actTimers[idx]);
   actTimers[idx] = setTimeout(() => { delete actState[idx]; const e2 = board.querySelector('.piece[data-idx="' + idx + '"]'); if (e2) { e2.classList.remove('act'); const v2 = e2.querySelector('video.pv'); if (v2) fadeSwap(v2, '../assets/hr/vid/' + vidKind(pieces[idx]) + '_idle.mp4', true); } }, dur + 60);
 }
+/* ---------- 提示模式：BFS 求解器（同形棋子可互换，规范化状态） ---------- */
+function solveFirstMove() {
+  const groups = {};
+  pieces.forEach((p, i) => { const k = p.w + 'x' + p.h; (groups[k] = groups[k] || []).push(i); });
+  const groupList = Object.values(groups);
+  function keyOf(pos) { return groupList.map(g => g.map(i => pos[i]).sort((a, b) => a - b).join(',')).join('|'); }
+  const maskT = pieces.map(p => {
+    const arr = new Array(20).fill(0);
+    for (let y = 0; y <= 5 - p.h; y++) for (let x = 0; x <= 4 - p.w; x++) {
+      let m = 0;
+      for (let dy = 0; dy < p.h; dy++) for (let dx = 0; dx < p.w; dx++) m |= 1 << ((y + dy) * 4 + (x + dx));
+      arr[y * 4 + x] = m;
+    }
+    return arr;
+  });
+  const start = pieces.map(p => p.y * 4 + p.x);
+  const caoIdx = pieces.findIndex(p => p.kind === 'cao');
+  const GOAL = 3 * 4 + 1;
+  if (start[caoIdx] === GOAL) return null;
+  const D4 = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const seen = new Set([keyOf(start)]);
+  let frontier = [{ pos: start, first: null, depth: 0 }];
+  let expansions = 0;
+  while (frontier.length) {
+    const next = [];
+    for (const node of frontier) {
+      let occ = 0;
+      node.pos.forEach((pp, i) => { occ |= maskT[i][pp]; });
+      for (let i = 0; i < node.pos.length; i++) {
+        const pp = node.pos[i], px = pp % 4, py = (pp / 4) | 0, own = maskT[i][pp];
+        for (let q = 0; q < 4; q++) {
+          const dx = D4[q][0], dy = D4[q][1], nx = px + dx, ny = py + dy;
+          if (nx < 0 || ny < 0 || nx + pieces[i].w > 4 || ny + pieces[i].h > 5) continue;
+          const npos = ny * 4 + nx;
+          if (maskT[i][npos] & (occ & ~own)) continue;
+          const nstate = node.pos.slice(); nstate[i] = npos;
+          const nk = keyOf(nstate);
+          if (seen.has(nk)) continue;
+          seen.add(nk);
+          const first = node.first || { idx: i, dx: dx, dy: dy };
+          if (nstate[caoIdx] === GOAL) { first.dist = node.depth + 1; return first; }
+          next.push({ pos: nstate, first: first, depth: node.depth + 1 });
+        }
+      }
+      if (++expansions > 600000) return null;
+    }
+    frontier = next;
+  }
+  return null;
+}
+let hintTimer = null;
+function clearHint() {
+  clearTimeout(hintTimer);
+  board.querySelectorAll('.hint-arrow').forEach(a => a.remove());
+  board.querySelectorAll('.piece.hinting').forEach(el => el.classList.remove('hinting'));
+}
+function showHint(mv) {
+  clearHint();
+  const p = pieces[mv.idx]; if (!p) return;
+  sel = mv.idx; render();
+  const el = board.querySelector('.piece[data-idx="' + mv.idx + '"]');
+  if (!el) return;
+  const d = DIRS.find(x => x[0] === mv.dx && x[1] === mv.dy);
+  el.classList.add('hinting');
+  const a = document.createElement('div');
+  a.className = 'hint-arrow ' + d[2];
+  a.textContent = d[3];
+  el.appendChild(a);
+  actReact(mv.idx, 1200);
+  const names = { up: '上', down: '下', left: '左', right: '右' };
+  document.getElementById('hint').textContent = '提示：把「' + p.name + '」往' + names[d[2]] + '挪一格。';
+  hintTimer = setTimeout(clearHint, 4200);
+}
+function askHint() {
+  if (won) return;
+  sfx.tap();
+  const hintEl = document.getElementById('hint');
+  hintEl.textContent = '军师正在推演……';
+  setTimeout(() => {
+    const mv = solveFirstMove();
+    if (!mv) { hintEl.textContent = '这一步军师也没推出来，试试重开本关。'; return; }
+    showHint(mv);
+  }, 40);
+}
 function shakePiece(idx) {
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
   if (el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 700); }
@@ -478,6 +575,7 @@ function doMove(p, d) {
   if (won || !canMove(p, d[0], d[1])) { if (!won) { sfx.bad(); caoReact('stern'); const fi = pieces.indexOf(p); actReact(fi, 900); shakePiece(fi); } return false; }
   const before = caoDist();
   p.x += d[0]; p.y += d[1]; steps++; sfx.slide();
+  clearHint();
   sel = pieces.indexOf(p);
   render();
   actReact(sel, 1100);
@@ -558,6 +656,7 @@ window.addEventListener('keydown', e => {
   doMove(pieces[sel], d);
 });
 
+document.getElementById('hintBtn').addEventListener('click', askHint);
 document.getElementById('resetBtn').addEventListener('click', () => { sfx.undo ? sfx.undo() : sfx.tap(); loadLevel(level); });
 document.getElementById('nextBtn').addEventListener('click', () => { sfx.good(); loadLevel(level + 1); });
 document.getElementById('startBtn').addEventListener('click', () => {
