@@ -63,6 +63,24 @@ canvas{background:radial-gradient(ellipse at 50% 42%, #38305c 0%, #211c3d 55%, #
 .gh-art-sprite{display:block;height:150px;width:auto;max-width:82%;object-fit:contain;margin:0 auto 10px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.55))}
 .card .big{display:flex;align-items:center;justify-content:center;min-height:56px}
 </style>
+<style id="tt-flat">
+.topbar{background:rgba(59,32,18,.8);border-radius:14px;padding:8px 10px}
+.topbar .tname{color:#ffe9c4}
+.hud .cell{background:rgba(255,248,232,.94);border:1.5px solid #e8b96f;color:#a4763a;box-shadow:0 3px 8px rgba(90,40,0,.18)}
+.hud .cell b{color:#5b3400}
+.hud .cell b.warn{color:#e0483e}
+#stomachBar{background:rgba(255,248,232,.94);border:1.5px solid #e8b96f;border-radius:12px;padding:7px 10px;box-shadow:0 3px 8px rgba(90,40,0,.18)}
+#stomachBar .lbl{color:#8a5a28}
+#stomachTip{color:#b08954}
+.slot{border-color:rgba(190,130,50,.55);background-color:rgba(255,255,255,.55)}
+.card{background:rgba(255,250,238,.97);color:#5b3400;box-shadow:0 18px 44px rgba(90,40,0,.3)}
+.card h1{color:#d3542e}
+.card p{color:#7a5230}
+.card .best{color:#c9862f}
+.card .score{color:#d3542e}
+.card .bigbtn{background:linear-gradient(180deg,#ff9a5c,#f96d2e);color:#fff;border:1.5px solid #ffd9a0;box-shadow:0 8px 20px rgba(249,109,46,.4)}
+.toast{background:rgba(59,32,18,.92);border-color:#e8b96f;color:#ffe9c4}
+</style>
 </head>
 <body>
 <div id="app">
@@ -93,7 +111,7 @@ canvas{background:radial-gradient(ellipse at 50% 42%, #38305c 0%, #211c3d 55%, #
 
 <div class="overlay" id="startScr">
   <div class="card">
-    <img class="gh-art-sprite" src="../assets/taotie.png" alt="">
+    <img class="gh-art-sprite" src="../assets/tao_closed.png" alt="">
     <h1>饕餮吞天</h1>
     <p>· 按住拖动饕餮，吞掉比它小的食物（键盘方向键也能走）。<br>
        · 吞下的先进三格胃袋，凑齐 <b>3 个同类</b>（水果／肉食／甜点／蔬菜）才消化，饕餮长大一圈。<br>
@@ -148,11 +166,13 @@ document.getElementById("muteBtn").addEventListener("click", function () {
 });
 
 /* ---------- 饕餮图（失败用 emoji 兜底） ---------- */
-const taoImg = new Image();
-let taoOK = false;
-taoImg.onload = () => { taoOK = true; };
-taoImg.onerror = () => { taoOK = false; };
-taoImg.src = "../assets/taotie.png";
+const taoC = new Image(); let taoC_OK = false;
+taoC.onload = () => { taoC_OK = true; };
+taoC.src = "../assets/tao_closed.png";
+const taoO = new Image(); let taoO_OK = false;
+taoO.onload = () => { taoO_OK = true; };
+taoO.src = "../assets/tao_open.png";
+let chompUntil = 0, lastScoreSeen = 0;
 const sceneImg = new Image(); sceneImg.src = "../assets/taotie_scene.jpg";
 const platImg = new Image(); platImg.src = "../assets/platter.png";
 /* ---------- 食物精灵图 ---------- */
@@ -328,8 +348,7 @@ function draw(t) {
     const sc = Math.max(W / sceneImg.naturalWidth, H / sceneImg.naturalHeight);
     const sw = sceneImg.naturalWidth * sc, sh = sceneImg.naturalHeight * sc;
     ctx.drawImage(sceneImg, (W - sw) / 2, (H - sh) / 2, sw, sh);
-    ctx.fillStyle = "rgba(13,10,30,.46)"; ctx.fillRect(0, 0, W, H);
-  } else { ctx.fillStyle = "#141126"; ctx.fillRect(0, 0, W, H); }
+  } else { ctx.fillStyle = "#f7e3c0"; ctx.fillRect(0, 0, W, H); }
   // 尘埃
   ctx.fillStyle = "rgba(255,255,255,.35)";
   for (let i = 0; i < 22; i++) {
@@ -344,9 +363,7 @@ function draw(t) {
     const edible = f.r < player.r * 0.95;
     ctx.save();
     ctx.globalAlpha = edible ? 1 : 0.55;
-    if (platImg.complete && platImg.naturalWidth) { const pd = f.r * 3.3; ctx.drawImage(platImg, f.x - pd / 2, f.y + bob - pd / 2, pd, pd); }
-    ctx.beginPath(); ctx.arc(f.x, f.y + bob, f.r + 3, 0, 6.29);
-    ctx.lineWidth = 1.5; ctx.strokeStyle = f.color + "aa"; ctx.stroke();
+    if (platImg.complete && platImg.naturalWidth) { const pd = f.r * 3.1; ctx.drawImage(platImg, f.x - pd / 2, f.y + bob - pd / 2, pd, pd); }
     const fim = FOOD_IMG[f.img];
     if (fim && fim.complete && fim.naturalWidth) {
       const fs = f.r * 2.15;
@@ -360,16 +377,20 @@ function draw(t) {
   // 饕餮
   const pr = player.r;
   ctx.save();
-  ctx.beginPath(); ctx.arc(player.x, player.y, pr * 1.12, 0, 6.29);
-  ctx.fillStyle = "rgba(255,170,80,.15)"; ctx.fill();
-  ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,170,80,.5)"; ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(player.x, player.y + pr * 0.98, pr * 1.05, pr * 0.32, 0, 0, 6.29);
+  ctx.fillStyle = "rgba(70,35,5,.20)"; ctx.fill();
   const breathe = (1 + Math.sin(t * 3) * 0.03) * (1 + (player.pulse || 0) * 0.15);
-  if (taoOK) {
-    const s = pr * 3.0 * breathe;
+  if (levelScore > lastScoreSeen) { lastScoreSeen = levelScore; chompUntil = t + 230; }
+  let nearEdible = false;
+  for (const f of foods) { if (f.r < player.r * 0.95 && Math.hypot(f.x - player.x, f.y - player.y) < player.r + f.r + 48) { nearEdible = true; break; } }
+  const mouthOpen = (t < chompUntil) || nearEdible || (t % 3000) < 170;
+  const bImg = (mouthOpen && taoO_OK) ? taoO : taoC;
+  if (taoC_OK) {
+    const s = pr * 3.3 * breathe * (mouthOpen ? 1.05 : 1);
     ctx.save();
     ctx.translate(player.x, player.y);
     ctx.scale(player.face * 1, 1);
-    ctx.drawImage(taoImg, -s / 2, -s / 2, s, s);
+    ctx.drawImage(bImg, -s / 2, -s / 2, s, s);
     ctx.restore();
   } else {
     ctx.beginPath(); ctx.arc(player.x, player.y, pr * 0.95 * breathe, 0, 6.29);
@@ -389,9 +410,9 @@ function draw(t) {
   ctx.globalAlpha = 1;
   // 顶部本关进度
   const pct = Math.min(1, levelScore / LEVELS[level].target);
-  ctx.fillStyle = "rgba(255,255,255,.16)"; ctx.fillRect(14, 12, W - 28, 9);
-  ctx.fillStyle = "#ffd873"; ctx.fillRect(14, 12, (W - 28) * pct, 9);
-  ctx.font = "11px sans-serif"; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(120,60,20,.28)"; ctx.fillRect(14, 12, W - 28, 9);
+  ctx.fillStyle = "#ff7847"; ctx.fillRect(14, 12, (W - 28) * pct, 9);
+  ctx.font = "11px sans-serif"; ctx.fillStyle = "rgba(96,44,14,.92)"; ctx.textAlign = "left";
   ctx.fillText("本关 " + levelScore + " / " + LEVELS[level].target, 14, 36);
 }
 
