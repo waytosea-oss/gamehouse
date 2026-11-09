@@ -206,6 +206,12 @@ body::after{background:radial-gradient(115% 55% at 50% 0%,rgba(6,10,20,0) 45%,rg
 @keyframes hopK{0%{transform:translateY(0)}35%{transform:translateY(-6px) scale(1.035)}100%{transform:translateY(0)}}
 .piece.hop{animation:hopK .5s cubic-bezier(.3,1.4,.4,1)}
 </style>
+<style id="hr-vid">
+.piece video.pv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;z-index:1;transition:opacity .25s}
+.piece .nm{z-index:2}
+.piece .arr{z-index:8}
+.piece.still video.pv{opacity:0}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -339,9 +345,9 @@ function render() {
     el.style.top = (p.y * 20 + 0.8) + '%';
     el.style.width = (p.w * 25 - 1.6) + '%';
     el.style.height = (p.h * 20 - 1.6) + '%';
-    el.innerHTML = '<span class="nm">' + p.name + '</span>';
+    el.innerHTML = (VID_KINDS[p.kind] ? '<video class="pv" muted loop playsinline autoplay preload="auto" src="../assets/hr/vid/' + p.kind + '_idle.mp4"></video>' : '') + '<span class="nm">' + p.name + '</span>';
     if (p.kind === 'cao') applyCaoMood(el);
-    if (actState[i] && Date.now() < actState[i]) el.classList.add('act');
+    if (actState[i] && Date.now() < actState[i]) { el.classList.add('act'); const vv = el.querySelector('video.pv'); if (vv) { vv.src = '../assets/hr/vid/' + p.kind + '_act.mp4'; vv.loop = false; vv.play().catch(() => {}); } }
     el.dataset.idx = i;
     if (i === sel && !won) {
       legalDirs(p).forEach(d => {
@@ -382,6 +388,20 @@ let caoMood = null, caoMoodUntil = 0, caoTimer = null;
 function caoDist() { const c = pieces.find(q => q.kind === 'cao'); return Math.abs(c.x - 1) + Math.abs(c.y - 3); }
 function applyCaoMood(el) {
   el.classList.remove('react-good', 'react-stern', 'react-order');
+  const vv = el.querySelector('video.pv');
+  const moodOn = caoMood && Date.now() <= caoMoodUntil;
+  if (vv) {
+    if (moodOn && (caoMood === 'order' || caoMood === 'good' || caoMood === 'win')) {
+      el.classList.remove('still');
+      if (!vv.src.endsWith('cao_act.mp4')) { vv.src = '../assets/hr/vid/cao_act.mp4'; vv.play().catch(() => {}); }
+      vv.loop = (caoMood === 'win');
+    } else if (moodOn && caoMood === 'stern') {
+      el.classList.add('still');
+    } else {
+      el.classList.remove('still');
+      if (!vv.src.endsWith('cao_idle.mp4')) { vv.src = '../assets/hr/vid/cao_idle.mp4'; vv.loop = true; vv.play().catch(() => {}); }
+    }
+  }
   el.querySelectorAll('.bubble').forEach(b => b.remove());
   if (!caoMood || Date.now() > caoMoodUntil) return;
   el.classList.add('react-' + (caoMood === 'win' ? 'good' : caoMood));
@@ -397,6 +417,7 @@ function caoReact(kind, hold) {
   if (kind && !hold) caoTimer = setTimeout(() => { caoMood = null; const e2 = board.querySelector('.p-cao'); if (e2) applyCaoMood(e2); }, 1650);
 }
 const ACT_KINDS = { guan: 1, zhang: 1, zhao: 1, ma: 1, huang: 1, bing: 1 };
+const VID_KINDS = { cao: 1, zhang: 1, guan: 1 };
 const actState = {}, actTimers = {};
 function actReact(idx, dur) {
   const p = pieces[idx]; if (!p || !ACT_KINDS[p.kind]) return;
@@ -404,8 +425,10 @@ function actReact(idx, dur) {
   actState[idx] = Date.now() + dur;
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
   if (el) el.classList.add('act');
+  const vv = el ? el.querySelector('video.pv') : null;
+  if (vv) { vv.src = '../assets/hr/vid/' + p.kind + '_act.mp4'; vv.loop = false; vv.play().catch(() => {}); }
   clearTimeout(actTimers[idx]);
-  actTimers[idx] = setTimeout(() => { delete actState[idx]; const e2 = board.querySelector('.piece[data-idx="' + idx + '"]'); if (e2) e2.classList.remove('act'); }, dur + 60);
+  actTimers[idx] = setTimeout(() => { delete actState[idx]; const e2 = board.querySelector('.piece[data-idx="' + idx + '"]'); if (e2) { e2.classList.remove('act'); const v2 = e2.querySelector('video.pv'); if (v2) { v2.src = '../assets/hr/vid/' + pieces[idx].kind + '_idle.mp4'; v2.loop = true; v2.play().catch(() => {}); } } }, dur + 60);
 }
 function shakePiece(idx) {
   const el = board.querySelector('.piece[data-idx="' + idx + '"]');
