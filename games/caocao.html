@@ -357,7 +357,7 @@ function canMove(p, dx, dy) {
 const DIRS = [[0, -1, 'up', '▲'], [0, 1, 'down', '▼'], [-1, 0, 'left', '◀'], [1, 0, 'right', '▶']];
 function legalDirs(p) { return DIRS.filter(d => canMove(p, d[0], d[1])); }
 
-const VID_READY = { cao: 1, zhang: 1, guan: 1, zhao: 1, ma: 1, huang: 1, bing: 1 };
+const VID_READY = { cao: 1, zhang: 1, guan: 1, zhao: 1, ma: 1, huang: 1, bing: 1, bing2: 1, bing3: 1, bing4: 1 };
 function vidKind(p) { return (p.kind === 'bing' && p._v > 1) ? 'bing' + p._v : p.kind; }
 function fadeSwap(v, src, loop) {
   if (!v) return;
