@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#e8d5ae">
+<meta name="hub-url" content="../">
+<title>沙丘化石局</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="preload" as="image" href="assets/cover.webp">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<canvas id="cv"></canvas>
+
+<!-- 首页 -->
+<div class="scr on" id="menu">
+  <div class="cover"></div>
+  <div class="topRow">
+    <button class="pill" id="mHub" aria-label="返回游戏屋"><b>‹</b>游戏屋</button>
+    <div class="sp"></div>
+    <button class="ic" id="mCab" aria-label="看展柜"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="9" y="13" width="6" height="7" fill="currentColor"/></svg></button>
+    <button class="ic" id="mHelp" aria-label="玩法说明"><svg viewBox="0 0 24 24"><path d="M9.2 9a2.9 2.9 0 1 1 4.3 2.5c-.9.4-1.5 1-1.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.5" fill="currentColor"/></svg></button>
+    <button class="ic" id="mSnd" aria-label="音效"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="mTitle"><h1>沙丘化石局</h1><p>慢一点，它在地下等了很久</p></div>
+  <div class="card">
+    <div class="cardH"><b>探坑</b><span id="cabCount">展柜 0 件标本</span></div>
+    <div class="layers"><span class="ly s1">表层粉砂</span><span class="ly s2">硬层</span><span class="ly s3">保护层</span></div>
+    <div class="pits" id="pits"></div>
+    <div class="goalLine">目标：损伤不超额度，完整提取本坑标本。</div>
+  </div>
+</div>
+
+<!-- 游戏中 HUD -->
+<div class="hud" id="hud">
+  <div class="hTop">
+    <button class="ic light" id="hBack" aria-label="返回探坑列表"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="hName"><b id="hName">三层探坑</b><span id="hSub">第 1 层 · 表层粉砂</span></div>
+    <button class="ic light" id="hPause" aria-label="暂停"><svg viewBox="0 0 24 24"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/></svg></button>
+  </div>
+  <div class="chips">
+    <span class="chip dmg" id="hDmg">损伤额度</span>
+    <span class="chip" id="hProg">露出 0%</span>
+    <span class="chip" id="hAct">动作 0</span>
+  </div>
+</div>
+<div class="botHud" id="botHud">
+  <div class="toolBar">
+    <div class="tools" id="tools">
+      <button data-tool="shovel" class="on"><svg viewBox="0 0 24 24"><path d="M14.5 3.5l6 6-8.5 8.5H6v-6L14.5 3.5z" fill="currentColor"/><path d="M13 5l6 6" stroke="#fff" stroke-width="1.6"/></svg><span>松土</span><small>表层 · 快</small></button>
+      <button data-tool="chisel"><svg viewBox="0 0 24 24"><path d="M5 19L19 5l2 2L9 21H5v-2z" fill="currentColor"/><path d="M14 4l6 6" stroke="#fff" stroke-width="1.6"/></svg><span>凿</span><small>硬层 · 中</small></button>
+      <button data-tool="brush"><svg viewBox="0 0 24 24"><path d="M4 20c4 0 7-1 9-3l-2-2c-2 2-5 3-7 5z" fill="currentColor"/><path d="M12 14L20 6l-2-2-8 8 2 2z" fill="currentColor" opacity=".65"/></svg><span>细刷</span><small>保护层 · 安全</small></button>
+    </div>
+    <div class="brushRow" id="brushRow">
+      <span>刷幅</span>
+      <input type="range" id="brushSize" min="1" max="3" step="1" value="2">
+      <b id="brushLab">中</b>
+      <span class="sep"></span>
+      <button class="mini" id="bProbe">探测</button>
+      <button class="mini" id="bSection">剖面</button>
+    </div>
+    <div class="statusLine" id="statusLine">先用松土清掉表层粉砂。</div>
+  </div>
+  <button class="extractBtn" id="bExtract">提取<br>标本</button>
+</div>
+
+<!-- 剖面 -->
+<div class="scr sheet" id="sectionP">
+  <div class="panel">
+    <button class="x" id="secClose" aria-label="关闭">×</button>
+    <h3>剖面</h3><p class="sub">从侧面看地层还剩多少，化石埋在哪一段深度。</p>
+    <canvas id="secCv" width="640" height="360"></canvas>
+    <div class="secLegend"><span><i class="sw s1"></i>表层粉砂</span><span><i class="sw s2"></i>硬层</span><span><i class="sw s3"></i>保护层</span><span><i class="sw sf"></i>化石</span></div>
+    <button class="cta" id="secOk">回到探坑</button>
+  </div>
+</div>
+
+<!-- 工具精度 -->
+<div class="scr sheet" id="helpP">
+  <div class="panel">
+    <button class="x" id="helpClose" aria-label="关闭">×</button>
+    <h3>工具精度</h3><p class="sub">伤害只看一件事：粗工具的范围有没有碰到已经露出的化石。没有隐藏概率。</p>
+    <div class="precCards">
+      <div class="prec warn"><b>粗工具</b><span>松土与凿效率高。预览圈变橙，说明接近保护层；变红，说明再下手就会敲伤化石。</span></div>
+      <div class="prec safe"><b>细刷</b><span>永远不会造成损伤，负责保护层和化石表面的浮土。刷幅可调，安全区域用大刷幅省动作。</span></div>
+    </div>
+    <div class="helpBody">
+      <p><b>施工顺序。</b>松土清表层，凿开硬层，探测给出化石的大致轮廓，靠近轮廓就换细刷沿边清理。</p>
+      <p><b>提取条件。</b>化石身上的保护层清完、表面浮土刷净、边缘黏连松开，才能提取。提前点提取，会告诉你还黏在哪。</p>
+      <p><b>损伤额度。</b>超额也能提取，受损标本进教学展柜并记录损伤来源；重打本坑可以冲完整提取。</p>
+    </div>
+    <button class="cta" id="helpOk">知道了</button>
+  </div>
+</div>
+
+<!-- 暂停 -->
+<div class="scr sheet" id="pauseP">
+  <div class="panel">
+    <h3>暂停</h3><p class="sub" id="pInfo"></p>
+    <button class="cta" id="pResume">继续</button>
+    <div class="row2"><button class="sec" id="pRestart">重开本坑</button><button class="sec" id="pSnd">音效：开</button></div>
+    <div class="row2"><button class="sec" id="pMenu">返回探坑</button><button class="sec" id="pHub">游戏屋</button></div>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div class="scr sheet" id="resP">
+  <div class="panel result">
+    <h3 id="resH">完整提取</h3><p class="sub" id="resSub"></p>
+    <div class="resFrame"><img id="resImg" alt=""><div class="resCap" id="resCap">展柜 · 记录层位</div></div>
+    <div class="resRows" id="resRows"></div>
+    <div class="card slim" id="resUnlock" hidden><span class="tag">已解锁</span><div id="resUnlockT"></div></div>
+    <button class="cta" id="resNext">下一坑</button>
+    <div class="row2"><button class="sec" id="resCab">看展柜</button><button class="sec" id="resRetry">重打本坑</button></div>
+    <button class="sec wide" id="resMenu">返回探坑</button>
+  </div>
+</div>
+
+<!-- 展柜 -->
+<div class="scr sheet" id="cabP">
+  <div class="panel">
+    <button class="x" id="cabClose" aria-label="关闭">×</button>
+    <h3>博物馆展柜</h3><p class="sub">每件标本都记着发现层位与损伤来源。</p>
+    <div class="cabGrid" id="cabGrid"></div>
+    <button class="cta" id="cabOk">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="aiNote">部分美术与动画由 AI 生成</div>
+<script src="pk.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body></html>
