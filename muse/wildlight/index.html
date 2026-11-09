@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2e4423">
+<meta name="hub-url" content="../">
+<title>野光图鉴</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<link rel="preload" as="image" href="assets/cover.webp">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<canvas id="cv"></canvas>
+
+<!-- 首页 -->
+<div class="scr on" id="menu">
+  <div class="cover"></div>
+  <div class="topRow">
+    <button class="pill" id="mHub"><b>‹</b>游戏屋</button>
+    <div class="sp"></div>
+    <button class="ic" id="mAlbum" aria-label="图鉴相册"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="10" r="1.7" fill="currentColor"/><path d="M4 17l5-4 4 3 3-2 4 3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg></button>
+    <button class="ic" id="mHelp" aria-label="玩法说明"><svg viewBox="0 0 24 24"><path d="M9.2 9a2.9 2.9 0 1 1 4.3 2.5c-.9.4-1.5 1-1.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.5" fill="currentColor"/></svg></button>
+    <button class="ic" id="mSnd" aria-label="音效"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="mTitle"><h1>野光图鉴</h1><p>等一只小鸟做它自己，再按下快门</p></div>
+  <div class="card">
+    <div class="cardH"><b>林地观察</b><span>金穗尾鸟 · 行为 <b id="recCount">0 / 3</b></span></div>
+    <div class="behs" id="behTiles"></div>
+    <div class="goalLine" id="goalLine">目标：清楚拍到「饮水」，胶片 3 张起步，行为不靠抽。</div>
+    <button class="cta" id="mStart">入林 · 林地观察</button>
+  </div>
+</div>
+
+<!-- 相机 HUD -->
+<div class="hud" id="hud">
+  <div class="hTop">
+    <button class="ic light" id="hBack" aria-label="回营地"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="hName"><b>林地观察</b><span id="hPhase">溪边 · 清晨</span></div>
+    <button class="chipBtn" id="hFF">快进 ×1</button>
+    <button class="ic light" id="hPause" aria-label="暂停"><svg viewBox="0 0 24 24"><rect x="7" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/><rect x="13.6" y="5" width="3.4" height="14" rx="1.2" fill="currentColor"/></svg></button>
+  </div>
+  <div class="chips">
+    <span class="chip" id="hFilm">胶片 6</span>
+    <span class="chip" id="hDist">距离 — 米</span>
+    <span class="chip gold" id="hTarget">目标：饮水</span>
+  </div>
+  <div class="clue" id="clueCard">
+    <b id="clueTitle">前兆</b>
+    <div id="clueLines"></div>
+  </div>
+</div>
+<div class="botHud" id="botHud">
+  <div class="spots">
+    <span class="spotsLab">观察位</span>
+    <button data-spot="shade" class="on">树荫</button>
+    <button data-spot="bush">灌木</button>
+    <button data-spot="shore">近岸</button>
+    <span class="focusLab" id="focusLab">按住画面对焦</span>
+  </div>
+  <button class="shutter" id="bShutter" aria-label="快门"></button>
+  <div class="hintLine" id="hintLine">拖动画面找鸟，按住画面对焦，低头触水时按快门。</div>
+</div>
+
+<!-- 照片结果 -->
+<div class="scr sheet" id="photoP">
+  <div class="panel">
+    <h3 id="phH">拍到了</h3><p class="sub" id="phSub"></p>
+    <div class="photoFrame"><img id="phImg" alt=""><div class="photoCap" id="phCap"></div></div>
+    <div class="checks" id="phChecks"></div>
+    <p class="phNote" id="phNote"></p>
+    <button class="cta" id="phOk">继续观察</button>
+    <button class="sec wide" id="phAlbum">看图鉴</button>
+  </div>
+</div>
+
+<!-- 图鉴 -->
+<div class="scr sheet" id="dexP">
+  <div class="panel">
+    <button class="x" id="dexClose" aria-label="关闭">×</button>
+    <h3>行为图鉴 · 金穗尾鸟</h3><p class="sub">地点解锁看发现，不看稀有度。照片存在相册里。</p>
+    <div class="dexList" id="dexList"></div>
+    <h4 class="albH">相册</h4>
+    <div class="albGrid" id="albGrid"></div>
+    <button class="cta" id="dexOk">关闭</button>
+  </div>
+</div>
+
+<!-- 玩法说明 -->
+<div class="scr sheet" id="helpP">
+  <div class="panel">
+    <button class="x" id="helpClose" aria-label="关闭">×</button>
+    <h3>怎么拍</h3>
+    <div class="helpBody">
+      <p><b>读前兆，别硬等。</b>每种行为出现前都有环境线索：岸边湿脚印、小虫飞向水边，说明它快去饮水；枝上挪步、尾羽轻颤，理羽和展羽都在后头。左上角的前兆卡会逐项点亮。</p>
+      <p><b>对焦。</b>按住画面不动，对焦框会锁住小鸟，对焦到 65% 以上才算清晰。拖动画面会打断对焦。</p>
+      <p><b>距离。</b>离得太近（4 米内），它落下时会避开这一轮。观察位按钮能快速换位，近岸只适合看，不适合等它落下。</p>
+      <p><b>判定。</b>主体入框、对焦清晰、行为对上，三项齐了才记入图鉴。失败只消耗一张胶片，回营地就能补满。章节内可快进时间，不用真等。</p>
+    </div>
+    <button class="cta" id="helpOk">知道了</button>
+  </div>
+</div>
+
+<!-- 暂停 -->
+<div class="scr sheet" id="pauseP">
+  <div class="panel">
+    <h3>暂停</h3><p class="sub" id="pInfo"></p>
+    <button class="cta" id="pResume">继续观察</button>
+    <div class="row2"><button class="sec" id="pSnd">音效：开</button><button class="sec" id="pMenu">回营地</button></div>
+    <button class="sec wide" id="pHub">游戏屋</button>
+  </div>
+</div>
+
+<!-- 图鉴补全 -->
+<div class="scr sheet" id="doneP">
+  <div class="panel result">
+    <h3>图鉴补全</h3><p class="sub">金穗尾鸟 · 三种行为全部记录</p>
+    <div class="photoFrame"><img id="doneImg" alt=""><div class="photoCap">金穗尾鸟 · 展羽</div></div>
+    <div class="resRows" id="doneRows"></div>
+    <button class="cta" id="doneAlbum">看图鉴相册</button>
+    <button class="sec wide" id="doneMenu">回营地</button>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<div class="aiNote">部分美术与动画由 AI 生成</div>
+<script src="pk.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body></html>
