@@ -1,0 +1,29 @@
+{
+  "fw": 284,
+  "fh": 480,
+  "cols": 6,
+  "rows": 4,
+  "n": 72,
+  "fps": 12,
+  "duration": 6,
+  "sheets": [
+    "gu-neutral-0.png",
+    "gu-neutral-1.png",
+    "gu-neutral-2.png"
+  ],
+  "webp_sheets": [
+    "gu-neutral-0.webp",
+    "gu-neutral-1.webp",
+    "gu-neutral-2.webp"
+  ],
+  "body": [
+    93,
+    89,
+    417,
+    640
+  ],
+  "first": "gu-neutral-first.png",
+  "source_video": "gu-neutral.mp4",
+  "source_fps": 24,
+  "seam_blend_frames": 10
+}

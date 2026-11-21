@@ -1,0 +1,29 @@
+{
+  "fw": 284,
+  "fh": 480,
+  "cols": 6,
+  "rows": 4,
+  "n": 72,
+  "fps": 12,
+  "duration": 6,
+  "sheets": [
+    "gu-warm-0.png",
+    "gu-warm-1.png",
+    "gu-warm-2.png"
+  ],
+  "webp_sheets": [
+    "gu-warm-0.webp",
+    "gu-warm-1.webp",
+    "gu-warm-2.webp"
+  ],
+  "body": [
+    93,
+    89,
+    417,
+    640
+  ],
+  "first": "gu-warm-first.png",
+  "source_video": "gu-warm-restrained-v2.mp4",
+  "source_fps": 24,
+  "seam_blend_frames": 10
+}

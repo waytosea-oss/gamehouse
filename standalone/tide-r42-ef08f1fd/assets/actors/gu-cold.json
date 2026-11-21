@@ -1,0 +1,29 @@
+{
+  "fw": 284,
+  "fh": 480,
+  "cols": 6,
+  "rows": 4,
+  "n": 72,
+  "fps": 12,
+  "duration": 6,
+  "sheets": [
+    "gu-cold-0.png",
+    "gu-cold-1.png",
+    "gu-cold-2.png"
+  ],
+  "webp_sheets": [
+    "gu-cold-0.webp",
+    "gu-cold-1.webp",
+    "gu-cold-2.webp"
+  ],
+  "body": [
+    93,
+    89,
+    417,
+    640
+  ],
+  "first": "gu-cold-first.png",
+  "source_video": "gu-cold.mp4",
+  "source_fps": 24,
+  "seam_blend_frames": 10
+}
